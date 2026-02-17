@@ -1,0 +1,168 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{enumitem}
+\usepackage{multirow}
+\usepackage{array}
+
+\title{Assignment \#1: Deep Neural Network for Regression and Deep Convolutional Neural Network for Classification}
+\author{%
+  Student Name \\
+  Student ID \\[1em]
+  COMP/EECE 7/8740 Neural Networks \\
+  Spring 2026
+}
+\date{February 2026}
+
+\begin{document}
+
+% ---------------------------------------------------------------------------
+% 1. Title Page
+% ---------------------------------------------------------------------------
+\maketitle
+\thispagestyle{empty}
+\newpage
+
+% ---------------------------------------------------------------------------
+% 2. Abstract
+% ---------------------------------------------------------------------------
+\begin{abstract}
+
+\end{abstract}
+\newpage
+
+% ---------------------------------------------------------------------------
+% 3. Introduction
+% ---------------------------------------------------------------------------
+\section{Introduction}
+
+\subsection{Problem Definition}
+
+\subsection{Background and Related Work}
+
+\subsection{Objectives and Contributions}
+
+% ---------------------------------------------------------------------------
+% 4. Methodology
+% ---------------------------------------------------------------------------
+\section{Methodology}
+
+\subsection{Overall System Pipeline}
+
+\subsection{Data Preprocessing}
+
+\subsection{Training and Testing Split}
+
+\subsection{Evaluation Strategy}
+
+% ---------------------------------------------------------------------------
+% 5. Neural Network Model Descriptions
+% ---------------------------------------------------------------------------
+\section{Neural Network Model Descriptions}
+
+\subsection{DNN Architecture for Regression (Task 1)}
+
+* used LabelEncoder to turn Country into a number. Should have used one-hot encoding for best results, but this is fine!
+* used MinMaxScaler to normalize so that high-magnitude variables like GDP don't dominate the gradient updates
+* used He initialization [citation needed!] for weights
+
+\subsection{DCNN Architecture for Classification (Task 2)}
+
+\subsection{Activation Functions}
+% Standard (ReLU, GELU) vs. proposed custom activation function
+
+\subsection{Optimization Techniques}
+% SGD with momentum, Adam, Gradient Descent from scratch
+
+\subsection{Loss Functions and Hyperparameters}
+
+% ---------------------------------------------------------------------------
+% 6. Experiments and Results
+% ---------------------------------------------------------------------------
+\section{Experiments and Results}
+
+\subsection{Dataset Description}
+
+\subsubsection{Life Expectancy Dataset (Task 1)}
+
+* Notice the loss is lower for ridge, but the MSE is lower for Lasso. This is because the loss includes penalties, but the MSE is strictly test results. So ridge ``looks better'' in training with lower loss but performs worse.
+
+\subsubsection{COIL-20 Dataset (Task 2)}
+
+\subsection{Exploratory Data Analysis (Task 1)}
+% Descriptive statistics and visualizations for GDP, BMI, Alcohol, Total Expenditure
+
+\subsection{Training and Testing Performance}
+% Training and validation loss curves, accuracy and convergence behavior
+
+\subsection{Quantitative Evaluation Metrics}
+
+\subsubsection{Task 1: Regression Metrics}
+% MSE, MAE, RMSE, R^2, Adjusted R^2
+
+\subsubsection{Task 2: Classification Metrics}
+% Accuracy, Precision, Recall, F1-score, Confusion Matrix, ROC, Precision-Recall curves
+
+\subsection{Comparative Analysis}
+
+\subsubsection{Regularization Comparison (Task 1)}
+% Lasso, Ridge, ElasticNet
+
+\subsubsection{Activation Function Comparison (Task 2)}
+% ReLU, GELU, Custom
+
+\subsubsection{Optimizer Comparison (Task 2)}
+% SGD with momentum vs. Adam
+
+\subsubsection{Threshold Analysis (Task 2)}
+% Performance without thresholding vs. confidence > 0.9
+
+\subsection{Discussion of Results}
+% Justify why Adjusted R^2 is smaller than R^2 (Task 1)
+
+\subsection{Limitations and Challenges}
+
+% ---------------------------------------------------------------------------
+% 7. Conclusion and Future Work
+% ---------------------------------------------------------------------------
+\section{Conclusion and Future Work}
+
+% ---------------------------------------------------------------------------
+% 8. References
+% ---------------------------------------------------------------------------
+\newpage
+\bibliographystyle{ieeetr}
+\begin{thebibliography}{99}
+
+\bibitem{ref1} % Add references here
+
+\end{thebibliography}
+
+% ---------------------------------------------------------------------------
+% 9. Assistance Disclosure
+% ---------------------------------------------------------------------------
+\section{Assistance Disclosure}
+
+I used Claude AI in VS Code extensively for this assignment. Namely, I used AI to help write, format, debug, and proofread LaTeX and Python notebooks. I also used AI to explain or summarize course concepts and for brainstorming.
+
+% ---------------------------------------------------------------------------
+% 10. Appendix
+% ---------------------------------------------------------------------------
+\newpage
+\appendix
+\section{Appendix}
+
+\subsection{Network Hyperparameters}
+
+\subsection{Additional Plots}
+
+\subsection{Pseudocode}
+
+\end{document}
