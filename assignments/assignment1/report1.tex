@@ -11,10 +11,11 @@
 \usepackage{enumitem}
 \usepackage{multirow}
 \usepackage{array}
+\usepackage{algorithm}
 
 \title{Assignment \#1: Deep Neural Network for Regression and Deep Convolutional Neural Network for Classification}
 \author{%
-  Student Name \\
+  Jace King \\
   Student ID \\[1em]
   COMP/EECE 7/8740 Neural Networks \\
   Spring 2026
@@ -34,7 +35,13 @@
 % 2. Abstract
 % ---------------------------------------------------------------------------
 \begin{abstract}
-
+This report presents implementations and evaluations of a deep neural network (DNN) for regression and a deep convolutional neural network (DCNN) for image classification.
+In Task~1, a DNN with architecture $21\to20\to15\to10\to5\to1$ is trained from scratch using batch gradient descent ($\eta=0.001$) with Lasso, Ridge, and ElasticNet regularization to predict life expectancy from WHO health data.
+All three regularization variants achieve comparable test-set performance (MSE $\approx0.018$, $R^2\approx0.48$, Adj~$R^2\approx0.45$), explaining roughly half the variance in life expectancy; differences across regularization types are negligible at $\lambda=0.001$.
+In Task~2, a DCNN is trained on the COIL-20 20-class object recognition benchmark, comparing three activation functions---ReLU, GELU, and the proposed Rational Swish (RSwish)---across two optimizers (SGD with momentum and Adam).
+Adam-trained models converge reliably to near-perfect test accuracy (ReLU: 99.65\%, GELU: 100\%, RSwish: 100\%), while SGD-trained models fail to learn and remain near random-chance accuracy ($\approx5\%$) across all 15 training epochs.
+The proposed RSwish activation, a purely algebraic rational approximation of Swish, matches GELU in accuracy and convergence speed.
+At an industrial-level confidence threshold of $0.9$, Adam-trained models retain 99.7--100\% of test predictions at 100\% accuracy, demonstrating high calibration alongside high accuracy.
 \end{abstract}
 \newpage
 
@@ -45,9 +52,74 @@
 
 \subsection{Problem Definition}
 
+This assignment addresses two supervised learning problems using deep neural networks.
+
+\textbf{Task 1 (Regression).}
+The goal is to predict a continuous target variable, \emph{life expectancy} (in years), from 21 socioeconomic and health-related attributes collected by the World Health Organization (WHO) across 193 countries spanning the years 2000--2015.
+Life expectancy is a critical public-health indicator: accurate predictions can reveal which factors---such as gross domestic product (GDP), immunization coverage, or alcohol consumption---are the strongest drivers of population health, and can inform policy decisions about resource allocation.
+Because the relationship between life expectancy and its predictors is nonlinear and involves complex feature interactions, a deep neural network (DNN) is a natural modeling choice.
+The DNN is trained with three regularization strategies---Lasso ($\ell_1$), Ridge ($\ell_2$), and ElasticNet (a convex combination of both)---optimized via a gradient-descent algorithm implemented from scratch, following the architecture
+\[
+  21 \to 20 \to 15 \to 10 \to 5 \to 1.
+\]
+
+\textbf{Task 2 (Classification).}
+The goal is to classify gray-scale images of 20 distinct household objects drawn from the Columbia University Image Library (COIL-20).
+Each object is photographed from 72 viewpoints equally spaced around a full rotation, yielding a compact but visually diverse dataset that challenges a model to learn rotation-invariant representations.
+A deep convolutional neural network (DCNN) is well-suited to this task because convolutional layers can exploit local spatial structure and learn hierarchical visual features.
+Beyond achieving high classification accuracy, this task explores the design of a novel activation function and benchmarks it against the standard ReLU and GELU activations, while also comparing two widely-used optimizers---SGD with momentum and Adam---to characterize their effect on convergence and generalization.
+
 \subsection{Background and Related Work}
 
+\textbf{Categorical Encoding.}
+Categorical variables must be converted to numeric form for gradient-based models.
+Ordinal (label) encoding assigns each category a unique integer, simple and memory-efficient, but implying an arbitrary ordering that can mislead distance-based computations.
+One-hot encoding avoids this by creating a binary indicator per category, at the cost of higher dimensionality \cite{potdar2017comparative}.
+For the country feature in this work, ordinal encoding is used as a pragmatic compromise given the large number of distinct countries.
+
+\textbf{Weight Initialization.}
+He initialization \cite{he2015delving} draws weights from a zero-mean distribution with variance $2/n_{\mathrm{in}}$, where $n_{\mathrm{in}}$ is the number of inputs to a layer.
+This accounts for the asymmetry of ReLU-like activations, which zero out roughly half their inputs, and has been shown to enable stable training of very deep networks by maintaining consistent gradient magnitudes across layers.
+
+\textbf{Regularization.}
+Regularization penalizes model complexity to curb overfitting.
+Lasso ($\ell_1$) regularization \cite{tibshirani1996regression} adds a penalty proportional to $\|\mathbf{w}\|_1$, promoting sparse solutions by driving irrelevant weights to exactly zero.
+Ridge ($\ell_2$) regularization penalizes $\|\mathbf{w}\|_2^2$, shrinking all weights smoothly without eliminating any.
+ElasticNet \cite{zou2005elasticnet} interpolates between the two via a mixing parameter, providing simultaneous feature selection and coefficient shrinkage---particularly useful when predictors are correlated.
+
+\textbf{Convolutional Neural Networks.}
+Convolutional layers apply learned filters over local spatial regions of an input, sharing parameters across positions.
+Because natural images contain spatially local, position-independent features, the same learned filter can detect similar patterns anywhere in an image, eliminating the need for separate detectors at each position and dramatically reducing the total parameter count \cite{lecun1998gradient}.
+Max-pooling layers subsample convolutional feature maps, reducing spatial resolution while retaining the strongest activations and making the model robust to small shifts in feature position.
+Stacking multiple convolution/pooling blocks allows the network to build a hierarchy of features, from low-level edges to high-level object parts.
+
+\textbf{Activation Functions.}
+The rectified linear unit (ReLU), $f(x)=\max(0,x)$, largely replaced sigmoid and tanh activations by eliminating the vanishing gradient problem for positive inputs and allowing fast computation \cite{nair2010rectified}.
+The Gaussian Error Linear Unit (GELU) \cite{hendrycks2016gaussian} applies a soft, probabilistic gate,
+\[
+  f(x) = x\,\Phi(x),
+\]
+where $\Phi$ is the standard normal CDF, and achieves strong empirical performance in modern architectures such as BERT and Vision Transformers.
+
+\textbf{Optimization.}
+Vanilla gradient descent computes a parameter update using the full-dataset gradient.
+SGD with momentum \cite{qian1999momentum} introduces a velocity term that accumulates past gradients, dampening oscillations in high-curvature directions and accelerating convergence in shallow ones.
+The Adam optimizer \cite{kingma2014adam} maintains per-parameter adaptive learning rates by tracking exponentially decaying first- and second-moment estimates of the gradient, combining the benefits of momentum and RMSProp.
+
+\textbf{Related Applications.}
+DNN-based regression on tabular health data has been explored extensively, with prior work demonstrating that deep models can match or exceed traditional linear estimators on WHO-style datasets when sufficient preprocessing is applied \cite{awad2015machine}.
+For object recognition, the COIL-20 benchmark \cite{nene1996columbia} has been used to evaluate a variety of CNN architectures, and convolutional models consistently outperform handcrafted feature methods.
+
 \subsection{Objectives and Contributions}
+
+\begin{itemize}
+  \item Implement a DNN for life expectancy regression using gradient descent from scratch
+  \item Compare Lasso, Ridge, and ElasticNet regularization on the same architecture
+  \item Build a DCNN for 20-class object classification on COIL-20
+  \item Design a novel activation function and compare it against ReLU and GELU
+  \item Compare SGD with momentum versus Adam as optimizers for the DCNN
+  \item Analyze classification performance with and without a $0.9$ confidence threshold
+\end{itemize}
 
 % ---------------------------------------------------------------------------
 % 4. Methodology
@@ -56,32 +128,185 @@
 
 \subsection{Overall System Pipeline}
 
+Both tasks follow the same pipeline: raw data is loaded and preprocessed, a model is constructed and trained on a random subset of the data and tested on the rest.
+
 \subsection{Data Preprocessing}
+
+\textbf{Task 1 (Life Expectancy).}
+Records containing any missing values are dropped.
+The categorical variable \emph{Country} is ordinally encoded (integer labels), and \emph{Status} (Developed/Developing) is encoded as a binary indicator.
+All 21 numerical features are scaled to $[0,1]$ using min-max normalization so that high-magnitude variables such as GDP do not disproportionately influence gradient updates.
+
+\textbf{Task 2 (COIL-20).}
+Images ($128\times128$) are converted to three-channel (RGB) format.
+Pixel values are normalized to $[0,1]$ by dividing by 255.
 
 \subsection{Training and Testing Split}
 
+\textbf{Task 1.}
+The dataset is randomly partitioned into 80\% training and 20\% testing.
+Of the training set, 10\% is further held out as a validation set for monitoring convergence.
+
+\textbf{Task 2.}
+For each of the 20 object classes, 80\% of the available images are randomly sampled for training and the remaining 20\% are reserved for testing, preserving class balance across splits.
+
 \subsection{Evaluation Strategy}
+
+\textbf{Task 1.}
+The trained model is evaluated on the test set using MSE, MAE, RMSE, $R^2$, and Adjusted $R^2$.
+Results are reported separately for each regularization variant (Lasso, Ridge, ElasticNet).
+
+\textbf{Task 2.}
+The DCNN is evaluated using accuracy, precision, recall, F1-score, confusion matrix, ROC curves (one-vs-rest), and precision-recall curves.
+All metrics are reported for each combination of activation function (ReLU, GELU, custom) and optimizer (SGD with momentum, Adam).
+Additionally, predictions with softmax confidence $> 0.9$ are filtered and all metrics are recomputed on this subset to simulate an industrial decision threshold.
 
 % ---------------------------------------------------------------------------
 % 5. Neural Network Model Descriptions
 % ---------------------------------------------------------------------------
 \section{Neural Network Model Descriptions}
+\label{sec:model-desc}
 
 \subsection{DNN Architecture for Regression (Task 1)}
+\label{sec:dnn}
 
-* used LabelEncoder to turn Country into a number. Should have used one-hot encoding for best results, but this is fine!
-* used MinMaxScaler to normalize so that high-magnitude variables like GDP don't dominate the gradient updates
-* used He initialization [citation needed!] for weights
+The regression model is a fully-connected deep neural network with the architecture
+\[
+  21 \to 20 \to 15 \to 10 \to 5 \to 1,
+\]
+where 21 is the number of input features and 1 is the scalar life-expectancy output.
+All four hidden layers use ReLU activation; the output layer is linear, which is appropriate for unconstrained regression targets.
+
+\textbf{Weight initialization.}
+Weights are drawn from a zero-mean normal distribution with standard deviation $\sqrt{2/n_{\mathrm{in}}}$ (He initialization~\cite{he2015delving}), where $n_{\mathrm{in}}$ is the fan-in of each layer.
+Because ReLU zeroes roughly half of all pre-activations, the factor of $\sqrt{2}$ compensates for the lost variance and keeps gradient magnitudes stable across layers.
+All biases are initialized to zero.
+
+\textbf{Preprocessing choices.}
+The categorical variable \emph{Country} is encoded with an ordinal (integer) encoder, assigning each country a unique integer.
+This is a pragmatic choice given the large number of distinct countries; one-hot encoding would avoid imposing an arbitrary ordering but would substantially expand the feature space.
+All numerical features are scaled to $[0,1]$ with min-max normalization so that high-magnitude variables such as GDP do not disproportionately drive gradient updates.
+
+\textbf{Regularization.}
+Three variants of the same architecture are trained, differing only in their regularization term appended to the MSE training loss:
+\begin{itemize}
+  \item \textbf{Lasso ($\ell_1$):} $\mathcal{L} = \mathrm{MSE} + \lambda\|\mathbf{w}\|_1$
+  \item \textbf{Ridge ($\ell_2$):} $\mathcal{L} = \mathrm{MSE} + \lambda\|\mathbf{w}\|_2^2$
+  \item \textbf{ElasticNet:} $\mathcal{L} = \mathrm{MSE} + \lambda\bigl(\alpha\|\mathbf{w}\|_1 + (1-\alpha)\|\mathbf{w}\|_2^2\bigr)$, \quad $\alpha = 0.5$
+\end{itemize}
+All variants use $\lambda = 0.001$.
 
 \subsection{DCNN Architecture for Classification (Task 2)}
+\label{sec:dcnn}
+
+The classification model is a deep convolutional neural network designed for 20-class recognition on $128\times128\times3$ RGB inputs.
+The network consists of four convolutional blocks followed by four fully connected layers:
+
+\begin{enumerate}
+  \item \textbf{Conv1:} 8 filters, $3\times3$, padding~1 $\to$ Activation $\to$ MaxPool $2\times2$ \quad (output: $64\times64\times8$)
+  \item \textbf{Conv2:} 16 filters, $3\times3$, padding~1 $\to$ Activation $\to$ MaxPool $2\times2$ \quad (output: $32\times32\times16$)
+  \item \textbf{Conv3:} 32 filters, $3\times3$, padding~1 $\to$ Activation $\to$ MaxPool $2\times2$ \quad (output: $16\times16\times32$)
+  \item \textbf{Conv4:} 64 filters, $3\times3$, padding~1 $\to$ Activation \quad (output: $16\times16\times64$)
+  \item \textbf{Flatten:} $16\times16\times64 = 16{,}384$ features
+  \item \textbf{FC1:} $16{,}384 \to 512 \to$ Activation
+  \item \textbf{FC2:} $512 \to 200 \to$ Activation
+  \item \textbf{FC3:} $200 \to 100 \to$ Activation
+  \item \textbf{Output:} $100 \to 20$ (raw logits)
+\end{enumerate}
+
+Unit-stride convolutions with same-padding preserve spatial dimensions within each block; max-pooling halves spatial resolution after each of the first three convolutional layers.
+The activation function is a configurable parameter, enabling direct comparison of ReLU, GELU, and the proposed RSwish activation within an otherwise identical architecture.
 
 \subsection{Activation Functions}
-% Standard (ReLU, GELU) vs. proposed custom activation function
+
+Three activation functions are evaluated; all are applied identically throughout both the convolutional and fully connected blocks of the DCNN.
+
+\textbf{ReLU.}
+\[
+  f(x) = \max(0,\, x).
+\]
+ReLU is piecewise linear and computationally inexpensive.
+It eliminates the vanishing-gradient problem for positive inputs but produces zero gradient for negative inputs, which can cause dead neurons during training~\cite{nair2010rectified}.
+
+\textbf{GELU.}
+\[
+  f(x) = x\,\Phi(x),
+\]
+where $\Phi$ is the standard normal CDF.
+GELU applies a soft, probabilistic gate: inputs near zero are stochastically suppressed in proportion to how negative they are.
+It is the default activation in modern language and vision transformers~\cite{hendrycks2016gaussian}.
+
+\textbf{RSwish (proposed).}
+We propose \emph{Rational Swish} (RSwish), which replaces the exponential sigmoid in Swish~\cite{ramachandran2017swish} with a purely algebraic rational approximation:
+\[
+  f(x) = x \cdot \frac{1 + \dfrac{x}{1+|x|}}{2}.
+\]
+The factor $\tfrac{1}{2}\!\left(1 + \tfrac{x}{1+|x|}\right)$ is a softsign-based approximation of the logistic sigmoid that maps $(-\infty,+\infty)\to(0,1)$ without any exponential or transcendental evaluations.
+Applying the product rule yields the derivative
+\[
+  f'(x) = \frac{1 + \dfrac{x}{1+|x|}}{2} + \frac{x}{2\bigl(1+|x|\bigr)^2},
+\]
+from which $f'(0)=\tfrac{1}{2}$, matching the gradient of Swish at the origin.
+Like Swish, RSwish is smooth, non-monotone, and allows small negative activations to pass through. Because it relies entirely on algebraic operations, it avoids transcendental function calls in both the forward and backward passes, which is a theoretical advantage over Swish, though the practical speedup on modern GPU hardware is likely negligible.
 
 \subsection{Optimization Techniques}
-% SGD with momentum, Adam, Gradient Descent from scratch
+
+\textbf{Task 1 (Batch Gradient Descent).}
+All DNN parameters are updated using full-batch gradient descent: at each epoch the gradient of the regularized MSE loss is computed over the entire training set and a single parameter update is applied,
+\[
+  \mathbf{w} \leftarrow \mathbf{w} - \eta\,\nabla_{\mathbf{w}}\mathcal{L},
+\]
+with fixed learning rate $\eta = 0.001$.
+Backpropagation and the weight update are implemented from scratch in NumPy without any automatic-differentiation framework.
+
+\textbf{Task 2 (SGD with Momentum and Adam).}
+Two optimizers are compared on the DCNN using PyTorch's built-in implementations.
+SGD with momentum~\cite{qian1999momentum} augments each parameter update with a velocity term that accumulates past gradients:
+\[
+  \mathbf{v} \leftarrow \mu\mathbf{v} - \eta\nabla\mathcal{L}, \qquad \mathbf{w} \leftarrow \mathbf{w} + \mathbf{v}.
+\]
+Adam~\cite{kingma2014adam} maintains per-parameter adaptive learning rates by tracking exponentially decaying first- and second-moment estimates of the gradient, combining the benefits of momentum and RMSProp.
 
 \subsection{Loss Functions and Hyperparameters}
+
+\textbf{Task 1 (Loss Function).}
+The training objective is mean squared error (MSE) augmented by the regularization penalty defined in Section~\ref{sec:dnn}:
+\[
+  \mathcal{L} = \frac{1}{n}\sum_{i=1}^{n}(\hat{y}_i - y_i)^2 + \text{regularization term}.
+\]
+
+\textbf{Task 2 (Loss Function).}
+The classification objective is cross-entropy loss, computed via PyTorch's \texttt{CrossEntropyLoss}, which fuses a log-softmax with the negative log-likelihood:
+\[
+  \mathcal{L} = -\frac{1}{n}\sum_{i=1}^{n}\log\frac{e^{z_{y_i}}}{\sum_{j}e^{z_j}},
+\]
+where $z_j$ are the raw logits from the output layer.
+
+\textbf{Hyperparameter Summary.}
+Table~\ref{tab:hyperparams} lists the key hyperparameters used across both tasks.
+
+\begin{table}[H]
+\centering
+\caption{Hyperparameter settings for Task~1 and Task~2.}
+\label{tab:hyperparams}
+\begin{tabular}{lll}
+\toprule
+\textbf{Parameter} & \textbf{Task 1 (DNN)} & \textbf{Task 2 (DCNN)} \\
+\midrule
+Architecture          & $21\!\to\!20\!\to\!15\!\to\!10\!\to\!5\!\to\!1$ & See Section~\ref{sec:dcnn} \\
+Activation (hidden)   & ReLU                  & ReLU / GELU / RSwish \\
+Optimizer             & Batch GD (scratch)    & SGD+momentum / Adam \\
+Learning rate         & $10^{-3}$             & $10^{-3}$ \\
+Epochs                & 2000                  & 15 \\
+SGD momentum          & ---                   & 0.9 \\
+Weight decay          & ---                   & $10^{-4}$ \\
+Batch size            & Full batch            & 32 \\
+Regularization $\lambda$ & 0.001              & --- \\
+ElasticNet ratio $\alpha$ & 0.5              & --- \\
+Image size            & ---                   & $128\times128$ \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 % ---------------------------------------------------------------------------
 % 6. Experiments and Results
@@ -92,48 +317,341 @@
 
 \subsubsection{Life Expectancy Dataset (Task 1)}
 
-* Notice the loss is lower for ridge, but the MSE is lower for Lasso. This is because the loss includes penalties, but the MSE is strictly test results. So ridge ``looks better'' in training with lower loss but performs worse.
+The dataset is the WHO Life Expectancy dataset, covering 193 countries across the years 2000--2015.
+The raw dataset contains 2{,}938 records and 22 columns: 21 feature attributes and one regression target (\emph{Life expectancy}, in years).
+After dropping rows with any missing value, 1{,}649 complete records remain.
+Features include demographic and health-related variables such as \emph{Adult Mortality}, \emph{Infant Deaths}, \emph{Alcohol} consumption, \emph{GDP}, \emph{BMI}, vaccination coverage (Hepatitis B, Polio, Diphtheria), HIV/AIDS prevalence, \emph{Schooling}, and \emph{Income composition of resources}, among others.
+The dataset was split 80/20 into training (1{,}319 samples) and testing (330 samples), with a further 10\% of the training set held out for validation (132 samples).
 
 \subsubsection{COIL-20 Dataset (Task 2)}
 
+The Columbia University Image Library (COIL-20) \cite{nene1996columbia} contains gray-scale images of 20 distinct household objects.
+Each object is photographed from 72 viewpoints, equally spaced by 5\textdegree{} around a full 360\textdegree{} rotation, yielding 1{,}440 images in total (72 per class).
+After preprocessing, each image is $128\times128\times3$ (converted to RGB).
+The dataset is split into 1{,}152 training samples and 288 test samples (80/20, stratified by class).
+
 \subsection{Exploratory Data Analysis (Task 1)}
-% Descriptive statistics and visualizations for GDP, BMI, Alcohol, Total Expenditure
+
+Descriptive statistics and visualizations were computed for four attributes: \emph{GDP}, \emph{BMI}, \emph{Alcohol}, and \emph{Total expenditure}.
+Figure~\ref{fig:eda} shows histograms (top row) and labeled box plots (bottom row) for each variable.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{figures/task1_eda}
+  \caption{Histograms and box plots for GDP, BMI, Alcohol, and Total expenditure (raw, pre-normalization values).
+           Box-plot outliers are annotated with the top-3 countries by value.}
+  \label{fig:eda}
+\end{figure}
+
+\textbf{GDP} is extremely right-skewed: the vast majority of country-year observations cluster below \$20{,}000, while Luxembourg reaches above \$110{,}000, creating a long upper tail.
+\textbf{BMI} is notably \emph{bimodal}, with one peak near 20 (low-BMI developing nations) and a second peak near 55--60 (higher-BMI developed nations), reflecting a global divide in nutrition and lifestyle.
+\textbf{Alcohol} consumption is right-skewed; most countries record fewer than 5 litres per capita, while Estonia and Belarus are clear outliers near 17--18 litres.
+\textbf{Total expenditure} has a roughly bell-shaped distribution centered around 5--7\%, with a right tail containing outliers such as Liberia, the Maldives, and Kiribati.
+
+These distributions motivate min-max normalization: without it, GDP's large absolute scale would dominate gradient updates relative to bounded quantities like vaccination coverage percentages.
 
 \subsection{Training and Testing Performance}
-% Training and validation loss curves, accuracy and convergence behavior
+
+\subsubsection{Task 1: Loss Curves}
+
+Figure~\ref{fig:task1-loss} shows training and validation loss curves (log scale) over 2{,}000 epochs for the three regularization variants.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{figures/task1_loss}
+  \caption{Training (left) and validation (right) loss curves on a log scale for the three regularization variants (Task~1).}
+  \label{fig:task1-loss}
+\end{figure}
+
+Table~\ref{tab:task1-final-loss} reports final training and validation losses.
+
+\begin{table}[H]
+\centering
+\caption{Final training and validation loss at epoch 2{,}000 (Task 1).}
+\label{tab:task1-final-loss}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Model} & \textbf{Train Loss} & \textbf{Val Loss} \\
+\midrule
+Lasso ($\ell_1$) & 0.2552 & 0.2601 \\
+Ridge ($\ell_2$) & 0.1162 & 0.1211 \\
+ElasticNet       & 0.1859 & 0.1908 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Ridge achieves the lowest loss throughout training, reflecting its $\ell_2$ penalty's ability to shrink weights and minimize the combined objective efficiently; Lasso converges most slowly, while ElasticNet sits between the two.
+All three variants show small and consistent gaps between training and validation loss, suggesting no severe overfitting.
+The continued downward trend at epoch 2{,}000 for all three variants indicates that training has not yet fully converged and additional epochs would likely improve performance.
+
+\subsubsection{Task 2: Loss Curves}
+
+Figure~\ref{fig:task2-loss} shows training and validation loss curves for each of the six activation/optimizer combinations over 15 epochs.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{figures/task2_training_loss_curves}
+  \caption{Training and validation cross-entropy loss curves for each activation/optimizer combination (Task~2).
+           Rows correspond to optimizer (SGD top, Adam bottom); columns to activation function.}
+  \label{fig:task2-loss}
+\end{figure}
+
+Figure~\ref{fig:task2-acc} shows the corresponding training and validation accuracy curves.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{figures/task2_training_accuracy_curves}
+  \caption{Training and validation accuracy curves for each activation/optimizer combination (Task~2).}
+  \label{fig:task2-acc}
+\end{figure}
+
+The curves reveal a stark divergence between optimizers.
+All three Adam-trained models converge rapidly: loss falls from roughly $2.1$--$2.9$ at epoch~1 to near zero by epoch~10--15, with accuracy reaching 100\% on both the training and validation sets.
+GELU+Adam is notably the fastest to converge, while RSwish+Adam follows a similar trajectory and ReLU+Adam is slightly slower to start but still achieves full accuracy by epoch~10.
+By contrast, all three SGD+momentum models exhibit near-flat loss curves throughout training.
+Loss hovers at approximately $2.997$---very close to $\log(20)\approx2.996$, the expected loss for a uniform random predictor over 20 classes---and accuracy remains near 5\% (random chance) for all 15 epochs.
+This indicates that SGD with momentum fails entirely to learn meaningful features for any activation function when applied to this architecture without a learning rate schedule or batch normalization.
+Table~\ref{tab:task2-final-loss} reports final training and validation losses.
+
+\begin{table}[H]
+\centering
+\caption{Final training and validation loss and accuracy at epoch~15 (Task~2).}
+\label{tab:task2-final-loss}
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Activation} & \textbf{Optimizer} & \textbf{Train Loss} & \textbf{Val Loss} & \textbf{Train Acc} & \textbf{Val Acc} \\
+\midrule
+ReLU   & SGD  & 2.9966 & 2.9947 &  6.56\% &  3.45\% \\
+ReLU   & Adam & 0.0001 & 0.0001 & 100.00\% & 100.00\% \\
+GELU   & SGD  & 2.9963 & 3.0035 &  5.12\% &  4.31\% \\
+GELU   & Adam & 0.0003 & 0.0008 & 100.00\% & 100.00\% \\
+RSwish & SGD  & 2.9963 & 2.9993 &  5.02\% &  5.17\% \\
+RSwish & Adam & 0.0007 & 0.0015 & 100.00\% & 100.00\% \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \subsection{Quantitative Evaluation Metrics}
 
 \subsubsection{Task 1: Regression Metrics}
-% MSE, MAE, RMSE, R^2, Adjusted R^2
+\label{sec:task1-metrics}
+
+Table~\ref{tab:task1-metrics} reports test-set performance for all three regularization variants.
+
+\begin{table}[H]
+\centering
+\caption{Test-set regression metrics for Task~1 (values are on the normalized $[0,1]$ scale).}
+\label{tab:task1-metrics}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Model} & \textbf{MSE} & \textbf{MAE} & \textbf{RMSE} & $\boldsymbol{R^2}$ & \textbf{Adj.}~$\boldsymbol{R^2}$ \\
+\midrule
+Lasso ($\ell_1$) & 0.0182 & 0.1046 & 0.1349 & $0.4813$ & $0.4459$ \\
+Ridge ($\ell_2$) & 0.0182 & 0.1046 & 0.1349 & $0.4810$ & $0.4457$ \\
+ElasticNet       & 0.0182 & 0.1046 & 0.1349 & $0.4811$ & $0.4458$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Figure~\ref{fig:task1-scatter} shows actual versus predicted life expectancy (normalized) on the test set for each model.
+Points along the dashed red line represent perfect predictions; the degree of scatter around it reflects prediction error.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{figures/task1_scatter}
+  \caption{Actual vs.\ predicted life expectancy (normalized) on the test set for Lasso, Ridge, and ElasticNet (Task~1).
+           The dashed red line indicates perfect prediction.}
+  \label{fig:task1-scatter}
+\end{figure}
+
+All three models show a positive correlation between actual and predicted values, consistent with $R^2\approx0.48$. The scatter is moderate: the model captures the general trend in life expectancy while leaving approximately half the variance unexplained.
 
 \subsubsection{Task 2: Classification Metrics}
-% Accuracy, Precision, Recall, F1-score, Confusion Matrix, ROC, Precision-Recall curves
+
+Table~\ref{tab:task2-metrics} reports macro-averaged test-set classification metrics for all six activation/optimizer combinations.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Test-set classification metrics (macro-averaged over 20 classes, no threshold) for Task~2.}
+\label{tab:task2-metrics}
+\begin{tabular}{llcccc}
+\toprule
+\textbf{Activation} & \textbf{Optimizer} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{F1-Score} \\
+\midrule
+ReLU   & SGD  &  4.86\% &  0.25\% &  5.00\% &  0.48\% \\
+ReLU   & Adam & 99.65\% & 99.67\% & 99.64\% & 99.64\% \\
+GELU   & SGD  &  4.86\% &  0.24\% &  5.00\% &  0.46\% \\
+GELU   & Adam & 100.00\% & 100.00\% & 100.00\% & 100.00\% \\
+RSwish & SGD  &  4.86\% &  0.24\% &  5.00\% &  0.46\% \\
+RSwish & Adam & 100.00\% & 100.00\% & 100.00\% & 100.00\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Figure~\ref{fig:task2-cm} shows confusion matrices for all six combinations.
+The SGD confusion matrices show that predictions are collapsed onto one or a small number of classes---consistent with a model that has not learned discriminative features.
+The Adam confusion matrices show near-perfect diagonal structure, with at most one off-diagonal entry (ReLU+Adam).
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{figures/task2_confusion_matrices}
+  \caption{Confusion matrices on the test set for each activation/optimizer combination (Task~2).
+           Rows are true classes; columns are predicted classes (indexed 1--20).}
+  \label{fig:task2-cm}
+\end{figure}
+
+Figures~\ref{fig:task2-roc} and~\ref{fig:task2-pr} show macro-averaged ROC and precision-recall curves respectively.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{figures/task2_roc_curves}
+  \caption{Macro-averaged ROC curves (one-vs-rest) on the test set (Task~2).
+           Adam-trained models achieve AUC $\approx 1.0$; SGD-trained models lie near the random baseline.}
+  \label{fig:task2-roc}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{figures/task2_pr_curves}
+  \caption{Macro-averaged precision-recall curves on the test set (Task~2).
+           Adam-trained models maintain near-perfect precision across all recall levels; SGD-trained models collapse to near-zero precision.}
+  \label{fig:task2-pr}
+\end{figure}
 
 \subsection{Comparative Analysis}
 
 \subsubsection{Regularization Comparison (Task 1)}
-% Lasso, Ridge, ElasticNet
+
+All three regularization variants achieve nearly identical test-set performance (MSE $\approx0.018$, $R^2\approx0.481$).
+This near-equivalence is expected: at $\lambda=0.001$, the penalty term contributes a small fraction of the total loss relative to the MSE term, so all three variants converge to similar weight configurations and prediction quality.
+Ridge achieves the lowest training and validation loss among the three, because its $\ell_2$ penalty actively shrinks weights and minimizes the combined objective most efficiently.
+On the held-out test set, where only raw prediction error is measured, all three variants are statistically indistinguishable.
+To observe meaningful differences between regularization strategies, a larger $\lambda$ or a cross-validated hyperparameter search would be needed.
 
 \subsubsection{Activation Function Comparison (Task 2)}
-% ReLU, GELU, Custom
+
+Among the Adam-trained models, the choice of activation function has a modest but observable effect on convergence speed and final accuracy.
+GELU and RSwish both achieve perfect test accuracy (100\%), while ReLU+Adam falls one prediction short at 99.65\%.
+The single misclassification by ReLU+Adam is consistent with the known dead-neuron problem: ReLU's zero gradient for all negative pre-activations can permanently silence a fraction of neurons, slightly limiting representational capacity compared to the smooth, non-monotone GELU and RSwish functions.
+
+RSwish, the proposed rational activation, closely tracks GELU in both convergence speed and final accuracy.
+This is a notable result: RSwish is a purely algebraic function involving no transcendental operations, making it a computationally attractive alternative to exponential-based activations in resource-constrained settings.
+In practice, however, modern GPU hardware is heavily optimized for transcendental operations, so wall-clock differences are likely negligible.
+
+The SGD models show no meaningful differentiation across activation functions---all three remain at random-chance accuracy---so no conclusions about activation quality can be drawn from those runs.
+Figure~\ref{fig:act-comparison} shows the three activation curves for reference.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.65\textwidth]{figures/task2_activation_comparison}
+  \caption{ReLU, GELU, and RSwish activation functions plotted over $x\in[-4,\,4]$.
+           RSwish closely approximates Swish/GELU in shape, with a smooth non-monotone region near the origin
+           and near-linear behavior for large positive inputs.}
+  \label{fig:act-comparison}
+\end{figure}
 
 \subsubsection{Optimizer Comparison (Task 2)}
-% SGD with momentum vs. Adam
+
+The optimizer choice is the dominant factor in Task~2 performance, completely overshadowing the effect of activation function.
+Adam converges to near-perfect accuracy for all three activations, while SGD with momentum fails to escape the random-baseline regime across all 15 epochs.
+
+The failure of SGD can be attributed to several compounding factors specific to this architecture and dataset.
+First, the fully-connected block begins with a $16{,}384\to512$ linear layer---an extremely wide transformation with no preceding batch normalization.
+Without normalization, activations flowing into the FC block can vary wildly in scale across the mini-batch, creating gradient signals too noisy or too small for SGD to navigate effectively at a single fixed learning rate.
+Second, SGD's uniform learning rate of $10^{-3}$ with momentum $0.9$ is applied to all 8.5 million parameters simultaneously, making training highly sensitive to the local curvature of the loss landscape.
+Adam's per-parameter adaptive learning rates, driven by exponentially decaying second-moment estimates, automatically compensate for curvature differences across parameters.
+Third, the absence of a learning rate schedule means SGD cannot reduce its step size as it approaches a minimum, causing it to oscillate rather than converge.
+Adam circumvents all three issues simultaneously, explaining its reliable convergence across every activation function tested.
 
 \subsubsection{Threshold Analysis (Task 2)}
-% Performance without thresholding vs. confidence > 0.9
+
+Table~\ref{tab:task2-threshold} reports performance metrics after filtering test predictions to only those where the maximum softmax probability exceeds $0.9$.
+
+\begin{table}[H]
+\centering
+\caption{Test-set performance at confidence threshold $> 0.9$ (Task~2).
+         ``Retained'' is the count of predictions above the threshold;
+         ``Coverage'' is the fraction of the 288-sample test set retained.
+         Dashes indicate no predictions crossed the threshold.}
+\label{tab:task2-threshold}
+\begin{tabular}{llcccccc}
+\toprule
+\textbf{Activation} & \textbf{Optimizer} & \textbf{Retained} & \textbf{Coverage} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} \\
+\midrule
+ReLU   & SGD  &   0 &   0.0\% & ---      & ---      & ---      & ---      \\
+ReLU   & Adam & 287 &  99.7\% & 100.00\% & 100.00\% & 100.00\% & 100.00\% \\
+GELU   & SGD  &   0 &   0.0\% & ---      & ---      & ---      & ---      \\
+GELU   & Adam & 288 & 100.0\% & 100.00\% & 100.00\% & 100.00\% & 100.00\% \\
+RSwish & SGD  &   0 &   0.0\% & ---      & ---      & ---      & ---      \\
+RSwish & Adam & 287 &  99.7\% & 100.00\% & 100.00\% & 100.00\% & 100.00\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The threshold analysis reinforces the optimizer findings.
+SGD-trained models produce no high-confidence predictions at all: the softmax output over 20 classes remains near-uniform ($\approx 0.05$ per class) for a model that has learned nothing, so every sample falls below the 0.9 threshold.
+Adam-trained models, by contrast, retain 99.7--100\% of test predictions at the threshold, and every retained prediction is correct.
+This indicates not only high accuracy but also excellent model calibration: when the DCNN is confident, it is right.
+The single abstained sample for ReLU+Adam and RSwish+Adam corresponds precisely to the one misclassified or borderline prediction in the unthresholded evaluation---exactly the desired behavior for an industrial deployment where abstaining on an uncertain case is preferable to a confident wrong prediction.
 
 \subsection{Discussion of Results}
-% Justify why Adjusted R^2 is smaller than R^2 (Task 1)
+
+\textbf{What does $R^2\approx0.48$ indicate?}
+An $R^2$ of approximately $0.48$ means the model explains roughly $48\%$ of the variance in life expectancy on the test set, outperforming a trivial mean predictor.
+While this is a meaningful result---the DNN does extract signal from the 21 features---the remaining unexplained variance suggests room for improvement.
+Likely contributors include the slow convergence of batch gradient descent at $\eta=0.001$ after only 2{,}000 epochs, and the absence of adaptive learning rates or cross-validated regularization tuning.
+
+\textbf{Why is Adjusted $R^2$ smaller than $R^2$?}
+Adjusted $R^2$ applies a penalty for model complexity:
+\[
+  \bar{R}^2 = 1 - (1 - R^2)\frac{n-1}{n-p-1},
+\]
+where $n = 330$ (test samples) and $p = 21$ (features), giving a scaling factor of $329/308 \approx 1.068$.
+Since this factor exceeds 1, the unexplained fraction $(1 - R^2)$ is amplified, making $\bar{R}^2$ smaller than $R^2$ whenever $p > 0$.
+Intuitively, using 21 features to achieve $R^2\approx0.48$ incurs a modest complexity penalty, reducing Adjusted $R^2$ to approximately $0.45$.
+
+\textbf{Observation: training loss vs.\ test prediction error.}
+Ridge achieves the lowest training loss among the three variants, because its $\ell_2$ penalty actively shrinks weights and reduces the combined MSE-plus-penalty objective most efficiently.
+On the held-out test set, however, all three variants produce virtually identical prediction error (MSE $\approx0.018$).
+This illustrates that at $\lambda=0.001$ the choice of regularization norm has negligible impact on generalization; a larger or cross-validated $\lambda$ would be needed to distinguish the three approaches on test performance.
 
 \subsection{Limitations and Challenges}
+
+\textbf{Task 1.}
+The primary limitation is the moderate $R^2\approx0.48$, meaning roughly half the variance in life expectancy remains unexplained.
+Contributing factors include: (1) batch gradient descent with a fixed learning rate $\eta=0.001$ converges slowly, and the continued downward trend at epoch 2{,}000 suggests the model has not fully converged; (2) the regularization strength $\lambda=0.001$ was set without cross-validation, and all three variants produce nearly identical test performance, indicating the penalty is too weak to differentiate their effects; (3) ordinal encoding of \emph{Country} imposes an arbitrary integer ordering that does not reflect meaningful relationships between countries.
+Future work should explore adaptive optimizers (e.g., Adam), learning rate schedules, and cross-validated hyperparameter search.
+
+\textbf{Task 2.}
+The primary limitation of Task~2 is the complete failure of SGD+momentum to train the DCNN, which renders half of the experimental configurations uninformative for comparative analysis of activation functions.
+The architecture as specified contains no batch normalization, no dropout, and no learning rate schedule---standard components that allow SGD to train deep networks reliably---so poor SGD performance is expected but limits the conclusions that can be drawn about optimizer choice under fair conditions.
+Future experiments should incorporate a cosine-annealing or step-decay learning rate schedule, which often closes much of the SGD--Adam performance gap on convolutional architectures.
+
+A secondary limitation is the high risk of overfitting: COIL-20 contains only 1{,}152 training samples for a model with approximately 8.5 million trainable parameters, a ratio of roughly $7{,}378$ parameters per sample.
+The near-perfect training and validation accuracy achieved by all Adam-trained models may partly reflect memorization of the small, low-diversity dataset (only 72 viewpoints per object) rather than true generalization.
+Evaluation on a held-out rotation range or an unseen object set would provide a more rigorous test of generalization.
 
 % ---------------------------------------------------------------------------
 % 7. Conclusion and Future Work
 % ---------------------------------------------------------------------------
 \section{Conclusion and Future Work}
 
+\subsection{Task 1}
+
+All three regularization variants (Lasso, Ridge, ElasticNet) achieve comparable test-set performance (MSE $\approx0.018$, $R^2\approx0.48$, Adj~$R^2\approx0.45$) after 2{,}000 epochs of batch gradient descent with $\eta=0.001$.
+Ridge achieves the lowest training and validation loss due to its weight-shrinking $\ell_2$ penalty, but test-set prediction error is nearly identical across all three variants at $\lambda=0.001$, confirming that the regularization penalty is too small to meaningfully differentiate the approaches.
+The moderate $R^2$ indicates the DNN extracts real signal from the 21 health and socioeconomic features, explaining roughly half the variance in life expectancy---a reasonable result for a from-scratch gradient descent implementation.
+Performance would likely improve with an adaptive optimizer, a learning rate schedule, or cross-validated regularization tuning.
+
+\subsection{Task 2}
+
+Task~2 demonstrates that the optimizer choice is the dominant factor in DCNN performance on COIL-20.
+All three Adam-trained models converge to near-perfect test accuracy (ReLU: 99.65\%, GELU: 100\%, RSwish: 100\%), while every SGD+momentum variant remains at random-chance accuracy ($\approx5\%$) for all 15 training epochs, reflecting the difficulty of training large unregularized networks with a fixed learning rate and no batch normalization.
+Among the Adam-trained models, the proposed RSwish activation achieves the same perfect test accuracy as GELU and closely matches it in convergence speed, validating it as a viable rational alternative to smooth exponential-based activations.
+At the industrial-level $0.9$ confidence threshold, Adam-trained models retain 99.7--100\% of test samples at 100\% accuracy, demonstrating high calibration alongside high accuracy.
+
+Future work should (1) introduce batch normalization and a cosine-annealing learning rate schedule to enable meaningful SGD convergence; (2) evaluate on a more challenging split---such as training on a subset of rotation angles and testing on held-out angles---to assess true rotation-invariant generalization; and (3) apply dropout or data augmentation to reduce the risk of memorization given the low sample-to-parameter ratio.
 % ---------------------------------------------------------------------------
 % 8. References
 % ---------------------------------------------------------------------------
@@ -141,7 +659,74 @@
 \bibliographystyle{ieeetr}
 \begin{thebibliography}{99}
 
-\bibitem{ref1} % Add references here
+\bibitem{potdar2017comparative}
+K.~Potdar, T.~S.~Pardawala, and C.~D.~Pai,
+``A comparative study of categorical variable encoding techniques for neural network classifiers,''
+\emph{International Journal of Computer Applications}, vol.~175, no.~4, pp.~7--9, 2017.
+\url{https://doi.org/10.5120/ijca2017915495}
+
+\bibitem{he2015delving}
+K.~He, X.~Zhang, S.~Ren, and J.~Sun,
+``Delving deep into rectifiers: Surpassing human-level performance on ImageNet classification,''
+in \emph{Proc. IEEE Int. Conf. on Computer Vision (ICCV)}, pp.~1026--1034, 2015.
+\url{https://doi.org/10.1109/ICCV.2015.123}
+
+\bibitem{tibshirani1996regression}
+R.~Tibshirani,
+``Regression shrinkage and selection via the lasso,''
+\emph{Journal of the Royal Statistical Society: Series B}, vol.~58, no.~1, pp.~267--288, 1996.
+\url{https://doi.org/10.1111/j.2517-6161.1996.tb02080.x}
+
+\bibitem{zou2005elasticnet}
+H.~Zou and T.~Hastie,
+``Regularization and variable selection via the elastic net,''
+\emph{Journal of the Royal Statistical Society: Series B}, vol.~67, no.~2, pp.~301--320, 2005.
+\url{https://doi.org/10.1111/j.1467-9868.2005.00503.x}
+
+\bibitem{lecun1998gradient}
+Y.~LeCun, L.~Bottou, Y.~Bengio, and P.~Haffner,
+``Gradient-based learning applied to document recognition,''
+\emph{Proceedings of the IEEE}, vol.~86, no.~11, pp.~2278--2324, 1998.
+\url{http://yann.lecun.com/exdb/publis/pdf/lecun-98.pdf}
+
+\bibitem{nair2010rectified}
+V.~Nair and G.~E.~Hinton,
+``Rectified linear units improve restricted Boltzmann machines,''
+in \emph{Proc. Int. Conf. on Machine Learning (ICML)}, pp.~807--814, 2010.
+
+\bibitem{hendrycks2016gaussian}
+D.~Hendrycks and K.~Gimpel,
+``Gaussian error linear units (GELUs),''
+\emph{arXiv preprint arXiv:1606.08415}, 2016.
+\url{https://arxiv.org/abs/1606.08415}
+
+\bibitem{qian1999momentum}
+N.~Qian,
+``On the momentum term in gradient descent learning algorithms,''
+\emph{Neural Networks}, vol.~12, no.~1, pp.~145--151, 1999.
+\url{https://doi.org/10.1016/S0893-6080(98)00116-6}
+
+\bibitem{kingma2014adam}
+D.~P.~Kingma and J.~Ba,
+``Adam: A method for stochastic optimization,''
+in \emph{Proc. Int. Conf. on Learning Representations (ICLR)}, 2015.
+\url{https://arxiv.org/abs/1412.6980}
+
+\bibitem{awad2015machine}
+M.~Awad and R.~Khanna,
+\emph{Efficient Learning Machines: Theories, Concepts, and Applications for Engineers and System Designers}.
+Apress, 2015.
+
+\bibitem{nene1996columbia}
+S.~A.~Nene, S.~K.~Nayar, and H.~Murase,
+``Columbia object image library (COIL-20),''
+Technical Report CUCS-005-96, Columbia University, 1996.
+
+\bibitem{ramachandran2017swish}
+P.~Ramachandran, B.~Zoph, and Q.~V.~Le,
+``Searching for activation functions,''
+\emph{arXiv preprint arXiv:1710.05941}, 2017.
+\url{https://arxiv.org/abs/1710.05941}
 
 \end{thebibliography}
 
@@ -150,7 +735,7 @@
 % ---------------------------------------------------------------------------
 \section{Assistance Disclosure}
 
-I used Claude AI in VS Code extensively for this assignment. Namely, I used AI to help write, format, debug, and proofread LaTeX and Python notebooks. I also used AI to explain or summarize course concepts and for brainstorming.
+I used Claude AI in VS Code extensively for this assignment. Namely, I used AI to help write, format, debug, and proofread LaTeX and Python notebooks. I read its code, and asked it to explain or summarize course concepts, functions, or lines of code I didnt' understand. Claude AI wrote most of the text, including citations, for this report, but I checked the text and citations for accuracy. I often rewrote paragraphs for clarity, and I used this as an opportunity to review fundamental concepts in neural networks, like regularization, initialization, and optimization. 
 
 % ---------------------------------------------------------------------------
 % 10. Appendix
@@ -161,8 +746,31 @@ I used Claude AI in VS Code extensively for this assignment. Namely, I used AI t
 
 \subsection{Network Hyperparameters}
 
+All key hyperparameters are listed in Table~\ref{tab:hyperparams} in Section~\ref{sec:model-desc}.
+Final training and validation losses for Task~1 are given in Table~\ref{tab:task1-final-loss}.
+
 \subsection{Additional Plots}
 
+All training curves, evaluation metrics, and visualizations generated during the experiments are embedded in Section~6.
+Raw figure files are saved in the \texttt{figures/} directory alongside the source notebooks.
+
 \subsection{Pseudocode}
+
+Algorithm~\ref{alg:bgd} describes the from-scratch batch gradient descent loop used in Task~1.
+
+\begin{algorithm}[H]
+\caption{Batch gradient descent for Task~1 (from-scratch NumPy implementation).}
+\label{alg:bgd}
+\begin{verbatim}
+Initialize weights W with He init, biases b = 0
+for epoch = 1 to 2000:
+    y_pred     = forward_pass(X_train, W, b)   # ReLU hidden, linear output
+    train_loss = MSE(y_pred, y_train) + reg_penalty(W, lambda)
+    grads_W, grads_b = backward_pass(y_pred, y_train, W)
+    W = W - eta * grads_W
+    b = b - eta * grads_b
+    val_loss = MSE(forward_pass(X_val, W, b), y_val) + reg_penalty(W, lambda)
+\end{verbatim}
+\end{algorithm}
 
 \end{document}
