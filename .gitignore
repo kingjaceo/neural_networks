@@ -47,6 +47,7 @@ assignments/**/report*.pdf
 
 # Datasets (download separately)
 assignments/**/coil-20-proc/
+assignments/assignment2/data
 
 # OS
 .DS_Store
