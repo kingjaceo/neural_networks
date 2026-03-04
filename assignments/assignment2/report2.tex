@@ -1,0 +1,10 @@
+% NOTE: The official Tiny ImageNet val/ split is repurposed as the held-out test
+% set. A validation set is carved from train/ using a per-class stratified 80/20
+% split (fixed seed=0 for reproducibility). Per-class stratification ensures all
+% 200 classes are represented proportionally in both subsets.
+
+% NOTE: Data augmentation (RandomCrop, RandomHorizontalFlip) does not increase
+% the training set size — __len__ is unchanged. What it does is apply random
+% transforms at load time in __getitem__, so each epoch shows different versions
+% of the same images. Over many epochs the model sees more variety, but each
+% epoch remains the same size.
