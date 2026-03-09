@@ -18,6 +18,7 @@ import random
 import numpy as np
 import torch
 import torch.nn as nn
+import torchvision.models as tv_models
 
 from models import get_model
 from utils import get_tiny_imagenet_loaders, compute_metrics, plot_curves
@@ -31,8 +32,12 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Train DCNN on Tiny ImageNet-200')
     parser.add_argument('--data_dir', type=str, required=True,
                         help='Root of tiny-imagenet-200 (contains train/ and val/)')
+    parser.add_argument('--arch', type=str, default='compactnet',
+                        choices=['compactnet', 'resnet18'],
+                        help='compactnet = novel architecture; resnet18 = baseline')
     parser.add_argument('--activation', type=str, default='relu',
-                        choices=['relu', 'gelu', 'rswish'])
+                        choices=['relu', 'gelu', 'rswish'],
+                        help='Activation for compactnet only (ignored for resnet18)')
     parser.add_argument('--epochs', type=int, default=100)
     parser.add_argument('--batch_size', type=int, default=128)
     parser.add_argument('--lr', type=float, default=1e-3)
@@ -42,6 +47,27 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('--checkpoint_dir', type=str, default='checkpoints')
     parser.add_argument('--results_dir', type=str, default='results')
     return parser.parse_args()
+
+
+# ---------------------------------------------------------------------------
+# Model builder
+# ---------------------------------------------------------------------------
+
+def build_model(arch: str, num_classes: int, activation: str) -> nn.Module:
+    if arch == 'compactnet':
+        return get_model(num_classes=num_classes, activation=activation)
+
+    # ResNet-18 adapted for 32x32 input:
+    #   - replace 7x7 stride-2 stem with 3x3 stride-1 (avoids immediate halving)
+    #   - remove maxpool (would further halve to 8x8 before any residual blocks)
+    model = tv_models.resnet18(weights=None)
+    model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
+    model.maxpool = nn.Identity()
+    model.fc = nn.Linear(model.fc.in_features, num_classes)
+    nn.init.kaiming_normal_(model.conv1.weight, mode='fan_out', nonlinearity='relu')
+    nn.init.kaiming_normal_(model.fc.weight, mode='fan_out', nonlinearity='relu')
+    nn.init.zeros_(model.fc.bias)
+    return model
 
 
 # ---------------------------------------------------------------------------
@@ -127,8 +153,8 @@ def main() -> None:
     os.makedirs(args.checkpoint_dir, exist_ok=True)
     os.makedirs(args.results_dir, exist_ok=True)
 
-    device = torch.device('cpu')
-    print(f'[train.py] device={device}  activation={args.activation}  epochs={args.epochs}')
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f'[train.py] device={device}  arch={args.arch}  activation={args.activation}  epochs={args.epochs}')
 
     # ------------------------------------------------------------------
     # Data
@@ -142,7 +168,7 @@ def main() -> None:
     # ------------------------------------------------------------------
     # Model, loss, optimiser, scheduler
     # ------------------------------------------------------------------
-    model = get_model(num_classes=200, activation=args.activation).to(device)
+    model = build_model(args.arch, num_classes=200, activation=args.activation).to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.AdamW(
         model.parameters(), lr=args.lr, weight_decay=args.weight_decay
@@ -155,7 +181,8 @@ def main() -> None:
     # ------------------------------------------------------------------
     # Training loop
     # ------------------------------------------------------------------
-    ckpt_path = os.path.join(args.checkpoint_dir, f'best_{args.activation}.pth')
+    tag = args.activation if args.arch == 'compactnet' else args.arch
+    ckpt_path = os.path.join(args.checkpoint_dir, f'best_{tag}.pth')
     train_losses, val_losses = [], []
     best_val_loss = float('inf')
 
@@ -195,8 +222,8 @@ def main() -> None:
     plot_curves(
         train_losses=train_losses,
         val_losses=val_losses,
-        title=f'Tiny ImageNet-200 — {args.activation.upper()}',
-        save_path=os.path.join(args.results_dir, f'curves_train_{args.activation}.png'),
+        title=f'Tiny ImageNet-200 — {tag.upper()}',
+        save_path=os.path.join(args.results_dir, f'curves_train_{tag}.png'),
     )
 
     # ------------------------------------------------------------------
@@ -207,19 +234,20 @@ def main() -> None:
 
     metrics_all  = compute_metrics(model, test_loader, device, num_classes=200,
                                    plots_dir=args.results_dir,
-                                   tag=f'train_{args.activation}')
+                                   tag=f'train_{tag}')
     metrics_conf = compute_metrics(model, test_loader, device, num_classes=200,
                                    threshold=0.9,
                                    plots_dir=args.results_dir,
-                                   tag=f'train_{args.activation}_conf90')
+                                   tag=f'train_{tag}_conf90')
 
     output = {
+        'arch': args.arch,
         'activation': args.activation,
         'best_val_loss': best_val_loss,
         'all_predictions': metrics_all,
         'high_confidence_0.9': metrics_conf,
     }
-    metrics_path = os.path.join(args.results_dir, f'metrics_train_{args.activation}.json')
+    metrics_path = os.path.join(args.results_dir, f'metrics_train_{tag}.json')
     with open(metrics_path, 'w') as f:
         json.dump(output, f, indent=2)
     print(f'Test metrics -> {metrics_path}')
