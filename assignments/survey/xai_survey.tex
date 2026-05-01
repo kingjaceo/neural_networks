@@ -1,0 +1,331 @@
+%% XAI Survey -- Post-2019 Developments
+\documentclass[12pt]{article}
+
+% ---------- Packages ----------
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{url}
+\usepackage{xspace}
+
+% ---------- Custom commands ----------
+\newcommand{\eg}{\textit{e.g.},\xspace}
+\newcommand{\ie}{\textit{i.e.},\xspace}
+\definecolor{darkblue}{RGB}{0,51,102}
+
+% =====================================================================
+\begin{document}
+
+\title{Advances in Explainable Artificial Intelligence Since 2019:\\
+       Methods, Applications, and Emerging Challenges}
+\author{Jace King, Claude AI\\{}University of Memphis\\{}jking19@memphis.edu}
+\date{}
+\maketitle
+
+\begin{abstract}
+The field of Explainable Artificial Intelligence (XAI) has undergone rapid
+transformation since 2019. Driven by widespread deployment of deep learning in
+high-stakes domains, growing regulatory pressure, and the emergence of large-scale
+foundation models, the research community has produced new techniques, evaluation
+frameworks, and theoretical insights. This survey synthesises key advances across
+four themes: (1) post-hoc and ante-hoc explanation methods, including counterfactual
+generation, concept-based approaches, and prototype learning; (2) explainability for
+attention-based architectures and mechanistic interpretability for large language
+models (LLMs); (3) XAI for graph neural networks (GNNs); and (4) evaluation
+methodology. We also survey domain applications and close with open problems
+including adversarial robustness of explanations, privacy tensions, and the
+regulatory landscape of the EU AI Act.
+\end{abstract}
+
+\noindent\textbf{Keywords:} Explainable AI, Interpretability, Deep Learning,
+Transformers, Large Language Models, Graph Neural Networks, Evaluation,
+Counterfactual Explanations, Mechanistic Interpretability, EU AI Act
+
+% =====================================================================
+\section{Introduction}
+\label{sec:intro}
+
+The opacity of modern machine learning models has long been a source of concern.
+Deep neural networks, despite their remarkable predictive power, arrive at
+decisions through computations not directly interpretable by humans. This tension
+is consequential: a credit-scoring model that cannot explain a rejection may
+violate consumer-protection law; a medical diagnostic system whose reasoning
+cannot be audited may never gain clinical adoption; an autonomous vehicle that
+cannot account for an evasive manoeuvre cannot be certified as safe.
+
+\emph{Explainable Artificial Intelligence} (XAI) encompasses the techniques,
+frameworks, and evaluation criteria that seek to make AI behaviour understandable
+to human stakeholders. The field matured substantially between 2016 and 2018 with
+landmark contributions including LIME~\cite{ribeiro2016lime},
+SHAP~\cite{lundberg2017shap}, Integrated Gradients~\cite{sundararajan2017integrated},
+Grad-CAM~\cite{selvaraju2017gradcam}, and the theoretical foundations of
+Doshi-Velez and Kim~\cite{doshivelez2017rigorous} and
+Lipton~\cite{lipton2018mythos}. The 2019 survey by Arrieta et
+al.~\cite{arrieta2020xai} marked a consolidation point for that first generation.
+Rudin's influential call to abandon black-box models in high-stakes settings in
+favour of inherently interpretable models~\cite{rudin2019stop} also appeared in
+2019 and framed much subsequent debate.
+
+Since 2019, the landscape has shifted in four important ways. \textbf{First},
+Transformers and their descendants (BERT, GPT, ViT) have replaced CNNs and RNNs
+as the de facto standard, requiring new explainability strategies. \textbf{Second},
+foundation models pre-trained on internet-scale corpora have blurred the boundary
+between explanation target and explanation medium: an LLM can itself produce
+natural-language explanations. \textbf{Third}, the EU AI Act~\cite{euaiact2021}
+mandates transparency requirements for high-risk applications, converting XAI from
+a research aspiration to a legal obligation. \textbf{Fourth}, evaluation
+methodology has received sustained critical attention, clarifying what ``good''
+explanations look like.
+
+This survey covers these developments from 2019 through early 2025, identifying
+the most influential conceptual threads rather than attempting encyclopaedic
+coverage.
+
+% =====================================================================
+\section{Advances in Post-Hoc Explanation Methods}
+\label{sec:posthoc}
+
+\subsection{Feature Attribution: Axiomatic Consolidation}
+
+The period 2019--2021 saw significant theoretical consolidation of feature
+attribution. Sundararajan and Najmi~\cite{sundararajan2020shapley} showed that
+SHAP, Integrated Gradients, and several other methods are instances of a more
+general Shapley-value framework parameterised by a choice of \emph{baseline},
+clarifying previously confusing discrepancies between methods.
+
+Lundberg et al.~\cite{lundberg2020treeshap} introduced \emph{TreeSHAP}, which
+computes exact Shapley values for tree ensembles in polynomial time. Widely used
+in production systems, it enabled SHAP to become the dominant explanation
+framework for tabular data, and introduced the important distinction between
+\emph{path-dependent} and \emph{interventional} SHAP.
+
+\subsection{Counterfactual Explanations}
+
+Counterfactual explanations --- answers to ``what would need to change for the
+decision to be different?'' --- emerged as a practically compelling paradigm.
+Building on Wachter et al.~\cite{wachter2017counterfactual}, the post-2019
+literature focused on counterfactuals that are simultaneously \emph{actionable},
+\emph{sparse}, \emph{plausible}, and \emph{diverse}. The DiCE
+framework~\cite{mothilal2020dice} addressed diversity directly by formulating
+generation as an optimisation problem with an explicit diversity penalty. A
+notable thread concerns \emph{causal counterfactuals}, which ground changes in
+structural causal models to ensure proposals respect the causal structure of the
+world~\cite{verma2020counterfactual}.
+
+\subsection{Concept-Based and Prototype Explanations}
+
+Feature attribution methods identify which inputs mattered but not \emph{why} at
+a semantic level. Concept-based methods bridge this gap.
+\textbf{ACE}~\cite{ghorbani2019ace} extended TCAV~\cite{kim2018tcav} by
+automatically discovering concepts through multi-resolution image segmentation and
+activation-space clustering, removing the requirement for manually labelled
+concept examples. \textbf{ProtoPNet}~\cite{chen2019protopnet} built
+interpretability into the architecture itself: the network learns prototypical
+parts used as comparison templates, explaining predictions as ``this patch looks
+like prototype $k$.'' \textbf{CRAFT}~\cite{fel2023craft} combined concept
+extraction with hierarchical activation factorisation, surfacing concepts at
+multiple abstraction levels in a single unified framework.
+
+% =====================================================================
+\section{Explainability for Graph Neural Networks}
+\label{sec:gnn}
+
+GNNs dominate relational data tasks --- molecular property prediction, social
+network analysis, knowledge graph reasoning --- but standard feature-attribution
+methods designed for grids or sequences do not transfer because the natural
+explanation unit is a subgraph, not a scalar feature.
+
+\textbf{GNNExplainer}~\cite{ying2019gnnexplainer} was the first general post-hoc
+method, identifying per-prediction subgraphs and node-feature subsets that
+maximise mutual information with the original prediction.
+\textbf{PGExplainer}~\cite{luo2020pgexplainer} improved on this by training a
+separate network to predict edge masks, enabling generalisation across the test
+set rather than solving a per-instance optimisation.
+\textbf{SubgraphX}~\cite{yuan2021subgraphx} applied Monte Carlo Tree Search to
+select subgraphs maximising a Shapley-value criterion, producing connected
+subgraphs that are more semantically coherent and easier for domain experts to
+interpret.
+
+A recognised limitation across all three is the \emph{faithfulness evaluation
+problem}: because the GNN's decision process is opaque, it is difficult to verify
+that an identified subgraph is genuinely causally responsible rather than merely
+correlated with the prediction.
+
+% =====================================================================
+\section{Explainability in the Era of Transformers}
+\label{sec:transformers}
+
+\subsection{The Attention Debate}
+
+The self-attention mechanism produces token-level weights that appear to explain
+which tokens influenced an output. Jain and Wallace~\cite{jain2019attention}
+challenged this, showing attention weights often disagree with gradient-based
+importance scores and that adversarial attention patterns can change distributions
+without changing predictions. Wiegreffe and
+Pinter~\cite{wiegreffe2019attention} gave a more nuanced response, showing
+attention \emph{can} serve as faithful explanation under certain conditions. The
+community reached a working consensus: raw attention weights are a weak proxy;
+reliable attribution requires propagation through the full computation graph.
+
+Abnar and Zuidema~\cite{abnar2020quantifying} introduced \emph{attention rollout},
+recursively multiplying attention matrices across layers. Chefer et
+al.~\cite{chefer2021transformer} extended this with gradient signals weighted by
+LRP-derived relevance rules, consistently outperforming raw attention and rollout
+on faithfulness metrics. Probing work~\cite{tenney2019bert,rogers2020bertology}
+further showed that BERT's layers recover the classical NLP pipeline in order ---
+lower layers encode part-of-speech, middle layers coreference, higher layers
+semantic roles --- suggesting attention heads specialise functionally and that
+mechanistic analysis at the head level is tractable.
+
+\subsection{LLMs and Self-Explanation}
+
+The emergence of fluent LLMs created a new mode of explanation: prompting the
+model to produce a rationale for its own output. Wei et
+al.~\cite{wei2022chainofthought} showed that \emph{chain-of-thought prompting}
+both explains the answer and contributes to producing it, improving performance on
+complex reasoning tasks. However, LLM-generated explanations can be factually
+incorrect or inconsistent with internal computation, motivating a sharp distinction
+between \emph{plausible} explanations (coherent to humans) and \emph{faithful}
+explanations (accurately describing the model's computation)~\cite{jacovi2020faithfully}.
+
+\subsection{Mechanistic Interpretability}
+
+Mechanistic interpretability seeks to reverse-engineer the algorithms implemented
+by neural networks at the level of individual weights and circuits. Elhage et
+al.~\cite{elhage2021mathematical} established a mathematical framework for
+analysing attention circuits in Transformers. Wang et
+al.~\cite{wang2022interpretability} applied this to identify a specific five-layer
+circuit in GPT-2 Small responsible for indirect object identification. Conmy et
+al.~\cite{conmy2023automating} proposed automated circuit discovery (ACDC) to
+improve scalability. Bricken et al.~\cite{bricken2023monosemanticity} applied
+dictionary learning to decompose transformer MLP layers into sparse, monosemantic
+features, addressing the \emph{superposition hypothesis} that networks represent
+more features than neurons by encoding them in overlapping directions.
+
+While these case studies are impressive, circuits identified in small models do not
+obviously generalise to billion-parameter deployed models --- a central open
+question for the programme.
+
+% =====================================================================
+\section{Evaluation of Explanations}
+\label{sec:eval}
+
+Evaluation is arguably the most consequential unsolved problem in XAI. Without
+rigorous evaluation, it is impossible to compare methods, assess progress, or
+trust a deployed explanation system.
+
+Jacovi and Goldberg~\cite{jacovi2020faithfully} formalised \emph{faithfulness} for
+NLP, arguing it is the primary desideratum for explanations that audit or debug
+models, while \emph{plausibility} (agreement with human intuition) matters for
+end-user explanations. These desiderata can conflict. \textbf{ROAR} (RemOve And
+Retrain)~\cite{hooker2019roar} operationalises faithfulness by removing features
+deemed important, retraining, and measuring the performance drop; it is expensive
+but more reliable than perturbation metrics that skip retraining. The
+\textbf{ERASER} benchmark~\cite{deyoung2020eraser} provides NLP datasets with
+both model-extracted and human-annotated rationales, enabling unified measurement
+of faithfulness and plausibility.
+
+Human-centred evaluation adds further complexity. Lage et
+al.~\cite{lage2019evaluation} found that simpler, more concise explanations improve
+decision speed and that explanation complexity interacts non-trivially with user
+expertise. Zhou et al.~\cite{zhou2021evaluating} identified three evaluation types
+--- application-grounded, human-grounded, and functionally-grounded --- which
+frequently disagree, underscoring the absence of a single authoritative paradigm.
+
+% =====================================================================
+\section{Domain Applications}
+\label{sec:apps}
+
+\textbf{Healthcare.} XAI faces the most intense deployment pressure in medicine.
+Tjoa and Guan~\cite{tjoa2021survey} identified three consumer groups --- clinicians,
+patients, and regulators --- each with distinct requirements, and noted that
+saliency maps are often inconsistent and vulnerable to perturbations, making them
+unreliable for clinical use. Reyes et al.~\cite{reyes2020interpretability} argued
+that the key gap in radiology is workflow integration: explanation outputs must
+conform to radiological reporting lexicons, not just highlight pixels.
+
+\textbf{NLP.} A distinctive challenge is that tokens are not semantically
+independent, so masking one token changes the meaning of surrounding context in
+ways that interact non-trivially with model behaviour~\cite{danilevsky2020survey}.
+
+\textbf{Computer Vision.} Concept-based and prototype methods have seen growing
+adoption for tasks requiring object-level explanations. ProtoPNet and its
+extensions consistently achieve competitive accuracy while being more robustly
+interpretable than post-hoc attribution on black-box models~\cite{chen2019protopnet}.
+
+\textbf{Autonomous Systems.} Autonomous vehicles require explanations satisfying
+both technical (fault diagnosis, safety verification) and socio-legal (liability,
+certification) requirements. Atakishiyev et al.~\cite{atakishiyev2021explainability}
+identified a need for \emph{contrastive temporal explanations} that account for
+counterfactual decisions not taken and the temporal context over which decisions
+unfold.
+
+% =====================================================================
+\section{Emerging Challenges and Future Directions}
+\label{sec:challenges}
+
+\textbf{Adversarial attacks on explanations.} Slack et al.~\cite{slack2020fooling}
+demonstrated that a classifier can behave differently when queried by LIME or SHAP
+versus a real user, producing misleading explanations that conceal discriminatory
+behaviour. Heo et al.~\cite{heo2019fooling} showed adversarial perturbations can
+drastically alter an explanation while leaving the prediction unchanged. Together,
+these results imply that explanations cannot be trusted without meta-verification
+--- itself an active research problem.
+
+\textbf{Privacy.} Shokri et al.~\cite{shokri2021privacy} showed that model
+explanations facilitate membership inference attacks, creating a fundamental
+tension in privacy-sensitive domains: the transparency regulators demand may expose
+the training data of the individuals regulation is meant to protect. Privacy-
+preserving XAI based on differential privacy remains an open problem with
+unsatisfactory utility-privacy tradeoffs.
+
+\textbf{Scalability to foundation models.} Most XAI methods were developed on
+small models. Gradient-based methods are expensive and unclear under emergent
+behaviours; LIME and SHAP require many model evaluations, prohibitive for LLMs.
+Mechanistic interpretability offers a principled path, but manual circuit analysis
+and combinatorial explosion at scale present serious practical barriers.
+
+\textbf{Regulatory compliance.} The EU AI Act~\cite{euaiact2021}, adopted in 2024,
+imposes transparency requirements on high-risk AI systems but does not precisely
+define what ``meaningful information about the logic of automated decisions''
+requires. This creates substantial legal and technical ambiguity that demands
+collaboration between legal scholars, policymakers, and AI researchers.
+
+Looking ahead, the most pressing research directions are: causal XAI grounded in
+structural causal models; scalable automated circuit discovery for large models;
+shared evaluation benchmarks analogous to ImageNet or GLUE; explanation methods
+tailored to generative models; and regulatory operationalisation of XAI
+requirements.
+
+% =====================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+
+The period since 2019 has been transformative for XAI. The field has moved from
+a small set of feature-attribution methods applied to CNNs and tabular models to a
+rich ecosystem addressing a much wider range of architectures, tasks, and
+stakeholder needs. The attention debate, the rise of concept-based explanations,
+the emergence of mechanistic interpretability, GNN-specific methods, and
+increasing rigour in evaluation are all significant advances.
+
+At the same time, the gap between methodological capability and deployment
+practice remains wide. Evaluation is inconsistent, explanations can be
+adversarially manipulated, privacy and transparency pull in opposite directions,
+and the transition to billion-parameter foundation models has outpaced existing
+methods. Rudin's challenge~\cite{rudin2019stop} --- to prefer interpretable models
+over explained black boxes --- resonates differently in the era of general-purpose
+foundation models, where a single opaque model powers thousands of downstream
+applications. Progress will require sustained attention not only to method
+development but to evaluation, human factors, causal reasoning, and the
+socio-technical contexts in which explanations are produced and consumed.
+
+% =====================================================================
+\bibliographystyle{elsarticle-num}
+\bibliography{xai_survey}
+
+\end{document}

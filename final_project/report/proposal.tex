@@ -1,0 +1,55 @@
+\documentclass{article}
+\usepackage[margin=0.75in, top=0.6in, bottom=0.6in]{geometry}
+\usepackage{enumitem}
+
+\title{\vspace{-1.5em}Final Project Proposal\\[0.3em]\large Procedural Geographic Map Generation via Generative Adversarial Networks\vspace{-1em}}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section*{Summary}
+We will train a GAN to produce terrain maps for use in a simple video game. 
+The training maps will be generated from Perlin-noise, so the GAN will be learning
+the Perlin-noise generation process.
+
+\section*{Description}
+
+\paragraph{Approach.}
+A DCGAN maps a latent vector $\mathbf{z} \sim \mathcal{N}(0,I)$ to a fixed-resolution bitmap
+where each pixel encodes a terrain type (water, grassland, forest, mountain, etc.).
+
+\paragraph{Data.}
+The training set consists of \textbf{2,000--5,000} maps generated via layered simplex (Perlin) noise
+with terrain-type thresholds applied to assign each pixel one of several categories
+(water, grassland, forest, mountain, etc.). The GAN's objective is to learn the distribution
+induced by this noise process, which enables the generation of novel terrain maps.
+
+\paragraph{Evaluation.}
+Image quality will be measured with Fr\'echet Inception Distance (FID).
+Since the training distribution is Perlin noise, frequency-domain statistics (power spectrum slope)
+of generated maps can be compared directly against training samples as a distribution-level check.
+Navigability will be assessed with two geometry-based metrics derived from A* traversal:
+\textbf{path tortuosity} (ratio of shortest-path length to Euclidean distance between endpoints,
+averaged over random pairs) measures how geographically interesting the terrain is, and
+\textbf{reachable area fraction} (fraction of traversable pixels reachable from a random start)
+measures connectivity and fragmentation.
+Together these reward maps that are neither trivially open nor hopelessly disconnected.
+
+\section*{Project Components}
+
+\begin{itemize}[leftmargin=1.5em, topsep=2pt, itemsep=0pt]
+    \item \textbf{True Data generation:} generate maps via layered Perlin noise; different noise levels produce different colors representing terrain types.
+    \item \textbf{Baseline DCGAN:} generator and discriminator; verify stability with loss curves and sample grids.
+    \item \textbf{Navigability metrics:} A* traversal; compute path tortuosity and reachable area fraction on generated maps.
+    \item \textbf{Quantitative evaluation:} FID, power spectrum comparison, and navigability metrics on a held-out test set.
+    \item \textbf{Game development and integration:} develop a very simple navigation game, with live, in-game map generation.
+    \item \textbf{Written report:} method, experiments, results, and discussion.
+    \item \textbf{Presentation / demo:} live or recorded in-game demo, slideshow summarizing approach and results.
+\end{itemize}
+
+\vspace{1em}
+\noindent\small\textit{Assistance from Claude AI.}
+
+\end{document}

@@ -1,0 +1,103 @@
+Assignment 4 - Implementation Plan
+====================================
+
+Task 1: Deep Convolutional Autoencoder (DCAE) on CIFAR-10 — 50 pts
+--------------------------------------------------------------------
+File: task1_dcae_cifar10.ipynb
+
+The reference code (Lecture_16_CAE_.ipynb) is a simple PyTorch CAE on grayscale
+MNIST with a tiny latent space. Major changes needed:
+
+Step 1 — Data loading
+  - Load CIFAR-10 (3-channel, 32x32) via torchvision.datasets.CIFAR10
+  - Normalize to [0, 1] (since we'll use Sigmoid output)
+  - Train/test split is built-in
+
+Step 2 — Build the DCAE with 512-dim latent space
+  - Encoder: Conv2d layers (3->32->64->128->256) with stride-2 downsampling
+    + BatchNorm + ReLU, then flatten to nn.Linear producing a 512-dim vector
+  - Decoder: Linear from 512 back up, reshape, then ConvTranspose2d layers
+    mirroring the encoder, final Sigmoid activation
+  - This is a significant redesign from the reference (which uses a 64-dim
+    conv feature map, not a flattened vector)
+
+Step 3 — Train the DCAE
+  - Loss: MSE
+  - Optimizer: Adam (lr ~1e-3)
+  - Epochs: 30-50 (adjust based on convergence)
+  - Track train/val loss per epoch for the report
+
+Step 4 — Evaluate reconstruction quality
+  - Compute MSE and SSIM (skimage.metrics.structural_similarity) on test set
+  - Show side-by-side original vs. reconstructed images (qualitative)
+
+Step 5 — Embedding extraction + clustering pipeline
+  - Run all images (train + test) through the encoder to get 512-dim embeddings
+  - PCA (sklearn): reduce 512 -> 10 dimensions
+  - K-means (sklearn, k=10): cluster the 10-dim features -> predicted labels
+  - t-SNE (sklearn): reduce 10-dim PCA features -> 2D
+
+Step 6 — Visualization
+  - Two t-SNE scatter plots: one colored by ground truth labels, one colored
+    by K-means labels
+  - Compare and discuss in the report
+
+
+Task 2: Generative Models (VAE + DCGAN) on Tiny ImageNet — 50 pts
+-------------------------------------------------------------------
+File: task2_vae_dcgan_tinyimagenet.ipynb
+
+The references (Lecture_17_18_DCGAN.ipynb and Lecture_17_GAN.ipynb) are
+TensorFlow/Keras GANs on MNIST. We need PyTorch implementations for 64x64
+RGB Tiny ImageNet.
+
+Step 1 — Data loading
+  - Download Tiny ImageNet-200 from Kaggle (64x64 RGB, 200 classes)
+  - Use ImageFolder with transforms (resize if needed, normalize to [-1, 1]
+    for GAN, [0,1] for VAE)
+  - Option to use 50% random subset if training is too slow
+
+Step 2 — Convolutional VAE
+  - Encoder: Conv2d layers (3->32->64->128->256) with stride-2 + BatchNorm
+    + LeakyReLU -> flatten -> two Linear heads for mu and log_var
+    (latent dim ~128 or 256)
+  - Reparameterization trick: z = mu + std * epsilon
+  - Decoder: Linear -> reshape -> ConvTranspose2d layers mirroring encoder
+    -> Sigmoid
+  - Loss: Reconstruction (MSE or BCE) + KL divergence
+  - Train ~30-50 epochs
+
+Step 3 — DCGAN
+  - Generator: Linear(latent_dim -> 256x4x4) -> reshape -> ConvTranspose2d
+    layers (256->128->64->32->3) with BatchNorm + ReLU, final Tanh
+  - Discriminator: Conv2d layers (3->32->64->128->256) with stride-2
+    + BatchNorm + LeakyReLU -> flatten -> Linear(1)
+  - Loss: Binary cross-entropy (real vs. fake)
+  - Optimizers: Adam with lr=2e-4, beta1=0.5 (standard DCGAN settings)
+  - Train ~30-50 epochs
+
+Step 4 — Generate and evaluate synthetic images
+  - Generate batches of images from both models
+  - Qualitative: Grid of generated images from each model
+  - Quantitative: MSE and SSIM between generated images and nearest real
+    images (or reconstruction metrics for VAE)
+
+Step 5 — Latent space visualization
+  - VAE: Extract mu vectors for test images -> t-SNE -> 2D scatter
+    (colored by class)
+  - DCGAN: Pass real images through discriminator (use intermediate features)
+    -> t-SNE -> 2D scatter
+  - Compare the two latent space structures
+
+
+Key Dependencies
+-----------------
+torch, torchvision, scikit-learn, scikit-image, matplotlib, numpy
+
+
+Recommended Order of Work
+--------------------------
+1. Task 1 first — more straightforward, builds foundational code (data
+   loading, metrics, t-SNE visualization) reusable in Task 2
+2. Task 2 VAE — builds on the autoencoder from Task 1
+3. Task 2 DCGAN — most complex, train last

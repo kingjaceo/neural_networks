@@ -1,0 +1,27 @@
+{
+  "total_words": 3429,
+  "max_sequence_len": 506,
+  "num_sequences": 24231,
+  "generated_texts": {
+    "lstm": {
+      "hilton seattle downtown": "Hilton Seattle Downtown Seattle Airport Hotel Is A Seating Of Better Of The Heart Of Downtown Seattle And Conveniently Located Near The Pike",
+      "best western seattle airport hotel": "Best Western Seattle Airport Hotel Is Located In The Heart Of Downtown Seattle And The Washington State Convention Center And The Sound Transit Light Rail",
+      "located in the heart of downtown seattle": "Located In The Heart Of Downtown Seattle The Holiday Inn\u00ae The Seattle Art Museum And The Museum Of The Emerald City And Character The Inn At El"
+    },
+    "gru": {
+      "hilton seattle downtown": "Hilton Seattle Downtown Hotel Is A Magnificent 14 000 Square Foot Tudor Revival The Gracious Inn Is Located Eight Blocks From The City",
+      "best western seattle airport hotel": "Best Western Seattle Airport Hotel Is A Magnificent 14 000 Square Foot Tudor Revival The Gracious Inn Is Located Eight Blocks From The City Center",
+      "located in the heart of downtown seattle": "Located In The Heart Of Downtown Seattle Our Hotel Is Near The Heart Of Seattle Wa Is A Perennial Hotel In Seattle Wa Is A Perennial Hotel"
+    },
+    "transformer": {
+      "hilton seattle downtown": "Hilton Seattle Downtown Seattle And The Seattle And The Seattle And The Seattle And The Seattle And The Seattle And The Seattle And",
+      "best western seattle airport hotel": "Best Western Seattle Airport Hotel And The Seattle And The Seattle And The Seattle And The Seattle And The Seattle And The Seattle And The",
+      "located in the heart of downtown seattle": "Located In The Heart Of Downtown Seattle And The Seattle And The Seattle And The Seattle And The Seattle And The Seattle And The Seattle And The"
+    }
+  },
+  "final_losses": {
+    "lstm": 2.1996918909371916,
+    "gru": 1.8237778152350346,
+    "transformer": 4.869730234746322
+  }
+}

@@ -1,0 +1,62 @@
+%% XAI Survey Slides
+\documentclass[aspectratio=169]{beamer}
+\usetheme{metropolis}
+
+\title{Advances in Explainable AI Since 2019}
+\author{Jace King}
+\institute{University of Memphis}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+% ----- Slide 1 -----
+\begin{frame}{Why XAI?}
+  Deep networks are powerful but opaque --- and opacity has consequences.
+  \vspace{1em}
+  \begin{itemize}
+    \item A credit model that can't explain a rejection may violate consumer law
+    \item A medical diagnostic system that can't be audited may never be adopted
+    \item An autonomous vehicle that can't account for its decisions can't be certified
+  \end{itemize}
+  \vspace{1em}
+  After 2019: Transformers took over, LLMs emerged, and the EU AI Act made transparency a \emph{legal} requirement.
+\end{frame}
+
+% ----- Slide 2 -----
+\begin{frame}{Post-Hoc Explanation Methods}
+  \begin{itemize}
+    \item \textbf{Feature attribution} --- SHAP, Integrated Gradients, and others unified under the Shapley framework; TreeSHAP made this practical for tree models
+    \item \textbf{Counterfactuals} --- ``What would need to change?'' DiCE generates diverse, actionable alternatives; causal variants respect structural causal models
+    \item \textbf{Concepts \& prototypes} --- ACE auto-discovers visual concepts; ProtoPNet builds prototypes directly into the architecture
+  \end{itemize}
+\end{frame}
+
+% ----- Slide 3 -----
+\begin{frame}{Transformers, LLMs, and Mechanistic Interpretability}
+  \begin{itemize}
+    \item \textbf{Attention $\neq$ explanation} --- raw attention weights are unreliable; attention rollout and gradient-weighted propagation work better
+    \item \textbf{LLMs as explainers} --- chain-of-thought prompting both explains and improves reasoning, but generated rationales can be \emph{plausible} without being \emph{faithful}
+    \item \textbf{Mechanistic interpretability} --- reverse-engineers circuits at the weight level; impressive in small models, but scaling to billion-parameter models remains an open problem
+  \end{itemize}
+\end{frame}
+
+% ----- Slide 4 -----
+\begin{frame}{Evaluation \& Open Challenges}
+  \textbf{Evaluation is arguably the hardest unsolved problem in XAI.}
+  \vspace{0.8em}
+  \begin{itemize}
+    \item Faithfulness vs.\ plausibility: these desiderata frequently conflict
+    \item Application-, human-, and functionally-grounded evaluations often disagree
+  \end{itemize}
+  \vspace{0.8em}
+  \textbf{Emerging challenges:}
+  \begin{itemize}
+    \item Explanations can be adversarially manipulated to conceal discrimination
+    \item Transparency facilitates membership inference attacks --- privacy and explainability pull in opposite directions
+    \item Most XAI methods don't scale to foundation models
+  \end{itemize}
+\end{frame}
+
+\end{document}

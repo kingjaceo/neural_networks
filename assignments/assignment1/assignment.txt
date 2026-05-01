@@ -1,0 +1,259 @@
+COMP/EECE 7/8740 Neural Networks
+
+Assignment # 1
+
+Spring 2026
+
+Due: Feb. 17, 2026
+
+Total points: 100
+
+ 
+
+This assignment aims to implement and explore deep neural network (DNN) and deep convolutional neural network (DCNN) models for regression and explore a new activation function for classification tasks.
+
+ 
+
+Task 1 (Points: 50):                                                                       
+
+Implement a Deep Neural Network (DNN)–based regression model to predict Life Expectancy (dependent variable) using the “Life expectancy Data.csv” dataset available on CANVAS. The dataset should be divided into training and testing subsets to develop and evaluate the regression model.
+
+Implementation Requirements
+
+    Number of attributes: 22 (including the dependent variable)
+    Data Preprocessing
+        Remove records containing missing (NA) values
+        Encode categorical attributes such as Country and Status
+        Normalize all numerical features
+    Exploratory Data Analysis
+        Present descriptive statistics and visualizations for the following attributes:
+            GDP
+            BMI
+            Alcohol
+            Total Expenditure
+    Model Development
+        Design and implement a DNN-based regression model with Lasso, Ridge, and ElasticNet (combination of Lasso and Ridge) regularization methods
+        Optimize the model using the Gradient Descent (GD) algorithm from scratch
+    Model Evaluation
+        Evaluate the trained model using the testing dataset
+        Provide visualizations comparing actual values with the predicted regression outputs
+    Performance Metrics
+        Mean Squared Error (MSE)
+        Mean Absolute Error (MAE)
+        Root Mean Squared Error (RMSE)
+        R² Score
+        Adjusted R² Score
+    Results Analysis
+        Visualize model performance and interpret the results in detail
+
+DNN Model Architecture
+
+    Construct the DNN architecture using 21 independent attributes as input features:
+
+                       21 -> 20 ->15 -> 10 -> 5-> 1
+
+Notes: 
+
+    Training and testing methods: use randomly selected 80% of the samples for training (10% samples from training examples can be considered for validation sets) and the remaining 20% for testing datasets, respectively, and report the results accordingly.
+    Justify why the adjusted R2 is smaller than R2
+
+Tasks 2 (Points: 50): 
+
+Implement a custom Deep Convolutional Neural Network (DCNN) architecture to classify 20 different objects using the Columbia University Image Library (COIL-20) object classification dataset. The dataset has been uploaded to CANVAS and includes predefined training and testing sets along with data descriptions.
+
+ 
+
+Figure 1. Example images for the 20 different object classification from Columbia University Image Library (COIL-20). (See the PDF version)
+
+ 
+
+Implementation Requirements
+
+Data Preprocessing
+
+    Resize input images to 64 × 64 × 3 or 128 × 128 × 3, depending on available computational resources
+    Normalize both training and testing image sets
+
+Activation Function Design and Comparison
+
+    Use an AI-assistive system to design a novel activation function (reference activation functions may include ReLU, Swish, GELU, TeLU, etc.)
+    Integrate the proposed activation function into the DCNN
+    Compare its performance against standard activation functions such as ReLU, and GELU
+
+Model Optimization
+
+    Train the model using the following optimization methods:
+        Stochastic Gradient Descent (SGD) with momentum
+        Adam optimizer
+
+Training Analysis
+
+    Plot training and validation loss curves to demonstrate learning behavior and convergence during training
+
+Model Evaluation
+
+    Evaluate the trained model on the test dataset using the following performance metrics:
+        Accuracy
+        Precision
+        Recall
+        F1-score
+        Confusion matrix
+        ROC curve
+        Precision–Recall curve
+
+DCNN Model Architecture
+
+Construct the DCNN using the following architecture for input images of size 64 × 64 × 3 or 128 × 128 × 3:
+
+Input (64×64×3 or 128×128×3)
+
+→ Conv1: 8 filters (3×3) + ReLU/ GELU/Custom Activation
+
+→ Max Pooling (2×2)
+
+→ Conv2: 16 filters (3×3) + ReLU/ GELU/Custom Activation
+
+→ Max Pooling (2×2)
+
+→ Conv3: 32 filters (3×3) + ReLU/ GELU/Custom Activation
+
+→ Max Pooling (2×2)
+
+→ Conv4: 64 filters (3×3) + ReLU/ GELU/Custom Activation
+
+→ Fully Connected: 512 + ReLU/ GELU/Custom Activation
+
+→ Fully Connected: 200 + ReLU/ GELU/Custom Activation
+
+→ Fully Connected: 100 + ReLU/ GELU/Custom Activation
+
+→ Softmax (20 classes)
+
+ 
+Expected Outcome
+
+    Analyze and compare the classification performance across different activation functions and optimization strategies
+    Interpret the results using quantitative metrics and visualizations
+    Present the overall performance of the model without applying any thresholding.
+    Additionally, compute and report performance metrics for predictions with confidence scores greater than 0.9, treating this value as an industrial-level decision threshold for the task.
+
+Notes:
+
+    Training and testing methods: use randomly selected 80% of the samples from each class for training and the remaining 20% for testing the model, respectively.
+    For report writing for task_2, you are allowed to use the mathematical intuition (such as equations or derivative of the activation function) of the new activation function generated by AI assistive system.
+
+Datasets in CANVAS:
+
+    Task 1 https://www.kaggle.com/datasets/kumarajarshi/life-expectancy-who Links to an external site.
+    Task 2: You can also download the processed datasets from https://cave.cs.columbia.edu/repository/COIL-20 Links to an external site.
+
+Ref. codes available in CANVAS:
+
+    Task 1: ~/CANVAS/Files/Ref.codes/Lecture_2_*.py
+    Task 2: ~/CANVAS/Files/Ref.codes/Lecture_3_ *.py
+
+ 
+
+Final Note: You must submit fully executable source code for both tasks as part of this assignment.
+
+The detailed instructions are provided in the PDF file available in the assignment folder. Please refer to the PDF version for complete guidelines.
+
+ 
+Report Outline
+
+ 
+1. Title Page
+
+    Course Title
+    Course Number
+    Student Name
+    Student ID
+    Assignment Number
+    Submission Date (Month, Year)
+
+2. Abstract
+
+(Starts on the second page)
+
+    Brief problem statement
+    Dataset and methodology overview
+    Key results and performance highlights
+    Main conclusions
+
+3. Introduction
+3.1 Problem Definition
+
+    Description of the classification/regression task
+    Motivation and real-world relevance
+
+3.2 Background and Related Work
+
+    Overview of CNN/DNN-based approaches
+    Summary of relevant prior studies and models
+
+3.3 Objectives and Contributions
+
+    Clear project objectives
+    Novel aspects (e.g., custom architecture, new activation function, optimizer comparison)
+    Summary of technical contributions
+
+4. Methodology
+
+    Overall system pipeline
+    Data preprocessing steps
+    Training and testing split
+    Evaluation strategy
+
+5. Neural Network Model Descriptions
+
+    DNN/DCNN architecture design for regression and classification
+    Layer-wise model configuration
+    Activation functions (standard vs. proposed)
+    Optimization techniques (SGD + momentum, Adam)
+    Loss functions and hyperparameters
+
+6. Experiments and Results
+6.1 Dataset Description
+
+    Dataset source and structure
+    Number of classes and samples
+    Input dimensions
+
+6.2 Training and Testing Performance
+
+    Training and validation loss curves
+    Accuracy and convergence behavior
+
+6.3 Quantitative Evaluation Metrics
+
+    Accuracy, Precision, Recall, F1-score
+    ROC and Precision–Recall curves
+
+6.4 Comparative Analysis
+
+    Performance comparison across:
+        Activation functions
+        Optimizers
+    Discussion of observed trends
+
+6.5 Limitations and Challenges
+
+    Computational constraints
+    Dataset limitations
+    Model generalization issues
+
+7. Conclusion and Future Work
+
+    Summary of findings
+    Key takeaways
+    Suggestions for future improvements or extensions
+
+8. References
+
+    Properly formatted academic references (APA / IEEE)
+
+9. Appendix (Optional)
+
+    Network hyperparameters
+    Additional plots
+    Pseudocode or algorithm descriptions

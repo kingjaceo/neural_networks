@@ -1,0 +1,204 @@
+COMP/EECE 7/8745 Neural Networks
+
+Assignment # 4
+
+Fall 2026
+
+Due: April 27, 2026
+
+Total points: 100
+
+ 
+
+ 
+
+This assignment focuses on implementing and analyzing convolutional autoencoder models for image embedding and clustering, as well as generating synthetic images using generative models.
+
+Task 1 (50 points):
+Develop and evaluate a Deep Convolutional Autoencoder (DCAE) to reconstruct input images from a 512-dimensional latent representation using CIFAR-10 datasets. After training, use the encoder to map all images into this 512-dimensional feature space. Next, apply Principal Component Analysis (PCA) to reduce the embeddings to 10 dimensions, followed by K-means clustering to assign labels. Finally, use t-distributed stochastic neighbor embedding (t-SNE) on the 10-dimensional PCA features to project the data into 2D space, and visualize the results by comparing the generated cluster labels with the original labels.
+					
+		
+		
+	
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+The example images are shown in Figure 1.  After training the CAE model successfully, please provide the qualitative and quantitative (MSE and SSIM) analysis results for the testing samples.
+
+                                     Figure 1. Example images from CIFAR 10 dataset.
+
+Note: Visualize the t-SNE embeddings using both the ground truth labels and the labels obtained from K-means clustering. Compare the two visualizations and report your observations accordingly.
+
+ 
+
+Task 2 (50 points):
+
+
+Implement generative models, including a Convolutional Variational Autoencoder (VAE) and a Deep Convolutional Generative Adversarial Network (DCGAN). Train and evaluate both models using the CIFAR-10 dataset. Example images from the dataset are illustrated in Figure 2. Finally, provide both qualitative and quantitative comparisons of the generated images using metrics such as Mean Squared Error (MSE) and Structural Similarity Index Measure (SSIM).
+
+ 
+
+Figure 2. Example images from Tiny ImageNet-200 datasets.
+
+Generate synthetic images using both models and compare their performance in the report.
+
+Notes:
+
+    Training considerations: If computational resources are limited, you may adopt one of the following strategies: Use a randomly selected 50% subset of the training data to train both generative models.
+    Visualize the latent representation with tSNE for both models (VAE and GAN). Compare the two visualizations and report your observations accordingly.
+
+ Datasets in CANVAS:
+
+    Task 1 : datasets.CIFAR10
+    Task 2: https://www.kaggle.com/datasets/akash2sharma/tiny-imagenet Links to an external site. 
+
+    Ref. codes available in CANVAS:
+
+    Task 1: ~/CANVAS/Files/Ref.codes/Lecture_16_XXXX.ipynb
+    Task 2: ~/CANVAS/Files/Ref.codes/Lecture_17/_18_19_.ipynb
+
+ 
+
+ 
+
+ 
+
+Final Note: You must submit fully executable source code for both tasks as part of this assignment. 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+Report Outline
+
+ 
+1. Title Page
+
+    Course Title
+    Course Number
+    Student Name
+    Student ID
+    Assignment Number
+    Submission Date (Month, Year)
+
+2. Abstract
+
+(Starts on the second page)
+
+    Brief problem statement
+    Dataset and methodology overview
+    Key results and performance highlights
+    Main conclusions
+
+3. Introduction
+3.1 Problem Definition
+
+    Description of the classification/regression task
+    Motivation and real-world relevance
+
+3.2 Background and Related Work
+
+    Overview of CNN/DNN-based approaches
+    Summary of relevant prior studies and models
+
+3.3 Objectives and Contributions
+
+    Clear project objectives
+    Novel aspects (e.g., custom architecture, new activation function, optimizer comparison)
+    Summary of technical contributions
+
+4. Methodology
+
+    Overall system pipeline
+    Data preprocessing steps
+    Training and testing split
+    Evaluation strategy
+
+5. Neural Network Model Descriptions
+
+    DCNN architectures (AE, VAE, and GAN) for representation and reconstructing images.
+    Layer-wise model configuration
+    Activation functions (standard vs. proposed)
+    Optimization techniques (SGD + momentum, Adam)
+    Loss functions and hyperparameters
+
+6. Experiments and Results
+6.1 Dataset Description
+
+    Dataset source and structure
+    Number of classes and samples
+    Input dimensions
+
+6.2 Training and Testing Performance
+
+    Training and validation loss curves
+    Accuracy and convergence behavior
+
+6.3 Quantitative and Qualitative Evaluation Metrics
+6.4 Comparative Analysis
+
+    Performance comparison
+    Discussion of observed trends
+
+6.5 Limitations and Challenges
+
+    Computational constraints
+    Dataset limitations
+    Model generalization issues
+
+7. Conclusion and Future Work
+
+    Summary of findings
+    Key takeaways
+    Suggestions for future improvements or extensions
+
+8. References
+
+    Properly formatted academic references (APA / IEEE)
+
+9. Appendix (Optional)
+
+    Network hyperparameters
+    Additional plots
+    Pseudocode or algorithm descriptions

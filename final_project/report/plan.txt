@@ -1,0 +1,72 @@
+Final Project Plan: Terrain GAN
+================================
+
+Status as of 2026-05-01
+-----------------------
+- (Done) Inspect generated data, verify ~21,000 train + 1,400 test images, "look right".
+- (Done) 7 presets, 3,000 train + 200 test images per preset, 128x128 RGB, jittered Perlin
+  noise (scale +-15%, persistence +-10%, factor +-10%). See dataset/metadata.json.
+- (Done) Trained 7 unconditional WGAN-GP DCGANs, one per preset, 50 epochs each.
+  Logs: logs/dcgan_array_24152_{1..7}.out, logs/dcgan_preset_{01..07}.csv.
+  Samples: samples/preset_{01..07}/epoch_NNNN.png and final.png.
+  Total wall time: ~9-10 h per preset (CPU only; node had 0 GPUs visible).
+- (Partial) cDCGAN training started but not finishing in time. Reached epoch 14/50 at
+  ~4,600 s/epoch (~76 min/epoch -- the conditional Concatenate roughly 6x'd per-epoch
+  cost on CPU). Logs: logs/cdcgan_24159.out, logs/cdcgan.csv. Samples through epoch 10
+  in samples/cdcgan/. 50-epoch completion would need ~46 more hours of compute.
+  Decision: report on the 7 unconditional DCGANs only; treat cDCGAN as a limitation /
+  future-work item.
+
+
+Remaining work
+--------------
+1. Generate sample grids from each trained generator (load G_final.weights.h5, sample
+   z ~ N(0, I), save grids). [User will do this himself]
+2. Evaluation on test set:
+   - FID against held-out test_images for the matching preset.
+   - Power-spectrum slope: compare radially-averaged 2D power spectrum of generated vs
+     real samples.
+   - A*-based navigability: path tortuosity and reachable-area fraction.
+   [User will do this himself]
+3. Game integration: load the best generator into game/game.py, sample a map at
+   run-time, render. [User will do this himself]
+4. Written report: drafted in report/report.tex (this is what's being assembled now).
+   Sections needing user-supplied numbers and figures are clearly marked TODO.
+5. Presentation / demo. [User]
+
+
+Key observations the report must explain
+----------------------------------------
+- Training loss is the unbounded Wasserstein critic loss; large negative magnitudes
+  and high variance are expected and not by themselves a sign of failure.
+- Visual quality varies sharply across presets:
+    * preset_02, preset_06: recognizable land/water structure, plausible blob shapes.
+    * preset_03, preset_04: large water regions with small land features; visible mode
+      collapse (e.g. preset_04 keeps producing a single bright island in dark water).
+    * preset_01, preset_05, preset_07: dominant-color background with one collapsed
+      blob; the discrete 6-tier terrain palette is not being recovered, only smoothed
+      gradients.
+- Probable causes of palette failure: (i) CPU-only training limited us to 50 epochs;
+  (ii) the discrete piecewise-constant palette is non-trivial for a tanh-output conv
+  generator to reproduce -- it has to learn sharp thresholds rather than smooth ramps;
+  (iii) BatchNorm in G under WGAN-GP is a known mild instability source.
+
+
+Architecture (as run)
+---------------------
+Generator (4.83M params):
+  z(100) -> Dense(8*8*512) -> Reshape(8,8,512) -> BN -> LReLU(0.2)
+        -> 4x [UpSample2x + Conv2D(3x3) + BN + LReLU(0.2)]   filters: 256, 128, 64, 3
+        -> tanh -> 128x128x3
+
+Discriminator / critic (2.79M params):
+  128x128x3 -> 4x [Conv2D(4x4, stride 2) + LReLU(0.2)]       filters: 64, 128, 256, 512
+            -> Flatten -> Dense(1)
+  No normalization (BatchNorm is incompatible with per-sample gradient penalty).
+
+Loss: Wasserstein + gradient penalty (lambda = 10), n_disc_steps = 5 D updates per G
+update. Adam(lr = 2e-4, beta_1 = 0.5, beta_2 = 0.9).
+
+Conditional variant adds a 7-dim one-hot:
+  G: concatenate to z before the first Dense.
+  D: concatenate to the flattened conv features before the final Dense.
